@@ -56,20 +56,20 @@ function setup_mode() {
     modeSelectTopologyRadio.addEventListener("change", () => {
         if (modeSelectTopologyRadio.checked) {
             mode = Mode.TOPOLOGY;
-            chip.reset_selected_qubits();
-            chip.reset_selected_couplers();
+            chip.resetSelectedQubits();
+            chip.resetSelectedCouplers();
         }
     });
     modeSelectQubitRadio.addEventListener("change", () => {
         if (modeSelectQubitRadio.checked) {
             mode = Mode.QUBIT;
-            chip.reset_selected_couplers();
+            chip.resetSelectedCouplers();
         }
     });
     modeSelectCouplerRadio.addEventListener("change", () => {
         if (modeSelectCouplerRadio.checked) {
             mode = Mode.COUPLER;
-            chip.reset_selected_qubits();
+            chip.resetSelectedQubits();
         }
     });
 }
