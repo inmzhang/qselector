@@ -21,6 +21,20 @@ function setup() {
   let canvas = createCanvas(canvasDiv.offsetWidth, canvasDiv.offsetHeight);
   canvas.parent("chipCanvas");
   setup_mode();
+
+  copyButton = createButton("Copy Selected Qubits");
+  let canvasPosition = canvasDiv.getBoundingClientRect();
+  let buttonX = canvasPosition.left + canvasDiv.offsetWidth - 100; // Adjust position as needed
+  let buttonY = canvasPosition.top + 10; // Adjust position as needed
+  copyButton.position(buttonX, buttonY);
+  copyButton.mousePressed(copySelectedQubits);
+
+  copyCouplerButton = createButton("Copy Selected Couplers");
+  let button2X = canvasPosition.left + canvasDiv.offsetWidth - 100; // Adjust position as needed
+  let button2Y = canvasPosition.top + 40; // Adjust position as needed
+  copyCouplerButton.position(button2X, button2Y);
+  copyCouplerButton.mousePressed(copySelectedCouplers);
+
   initializeChip();
 }
 
@@ -97,13 +111,21 @@ function getCouplerColor(coupler) {
 function initializeChip() {
   const chipWidth = parseInt(document.getElementById("chipWidth").value);
   const chipHeight = parseInt(document.getElementById("chipHeight").value);
-  const qubitStartIdx = parseInt(document.getElementById("qubitStartIndex").value);
+  const qubitStartIdx = parseInt(
+    document.getElementById("qubitStartIndex").value
+  );
   const useOriginAsQubit = document.getElementById("useOriginAsQubit").checked;
   const qubitNameLength = parseInt(
     document.getElementById("qubitNameLength").value
   );
 
-  chip = makeChip(chipWidth, chipHeight, useOriginAsQubit, qubitStartIdx, qubitNameLength);
+  chip = makeChip(
+    chipWidth,
+    chipHeight,
+    useOriginAsQubit,
+    qubitStartIdx,
+    qubitNameLength
+  );
 
   const chip_center = chip.center();
   const canvas_center = [width / 2, height / 2];
@@ -239,6 +261,44 @@ function displayStats() {
     statsBoxX + margin,
     statsBoxY + margin * 4 + statsTextSize * 3
   );
+}
+
+function copySelectedQubits() {
+  // Get selected qubits' names
+  const selectedQubits = chip
+    .selectedQubits()
+    .map((qubit) => getQubitName(qubit.id, 3));
+
+  // Generate Python list representation
+  const pythonList =
+    "[" + selectedQubits.map((name) => `'${name}'`).join(", ") + "]";
+
+  // Copy to clipboard
+  navigator.clipboard
+    .writeText(pythonList)
+    .then(() => {
+      console.log("Python list copied to clipboard:", pythonList);
+    })
+    .catch((err) => {
+      console.error("Unable to copy to clipboard:", err);
+      alert("Unable to copy to clipboard!");
+    });
+}
+
+function copySelectedCouplers() {
+  let selectedCouplerNames = chip
+    .selectedCouplers()
+    .map((coupler) => `'${coupler.id}'`);
+  let couplerListText = "[" + selectedCouplerNames.join(", ") + "]";
+
+  navigator.clipboard
+    .writeText(couplerListText)
+    .then(() => {
+      console.log("Selected couplers copied to clipboard:", couplerListText);
+    })
+    .catch((err) => {
+      console.error("Failed to copy selected couplers to clipboard:", err);
+    });
 }
 
 class Qubit {
