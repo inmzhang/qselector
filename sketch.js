@@ -1,14 +1,42 @@
 let chip;
 let scaleFunc;
-const couplerColor = 'rgb(0, 0, 0)';
-const qubitColor = 'rgb(0, 122, 255)';
+let sizeScale;
+
+const Mode = {
+    TOPOLOGY: 0,
+    SELECT: 1,
+}
+let mode = Mode.TOPOLOGY;
+
+const workQubitColor = 'rgb(0, 122, 255)';
+const disabledQubitColor = 'rgb(255, 0, 0)';
+const workCouplerColor = 'rgb(0, 0, 0)';
+const disabledCouplerColor = 'rgb(255, 0, 0)';
 const textColor = 'rgb(255, 255, 255)';
+const diameterScale = 2 / 3;
 
 
 function setup() {
     let canvasDiv = document.getElementById('chipCanvas');
     let canvas = createCanvas(canvasDiv.offsetWidth, canvasDiv.offsetHeight);
     canvas.parent('chipCanvas');
+
+    const modeTopologyRadio = document.getElementById('modeTopology');
+    const modeSelectRadio = document.getElementById('modeSelect');
+
+    mode = modeTopologyRadio.checked ? Mode.TOPOLOGY : Mode.SELECT;
+
+    modeTopologyRadio.addEventListener('change', () => {
+        if (modeTopologyRadio.checked) {
+            mode = Mode.TOPOLOGY;
+        }
+    });
+
+    modeSelectRadio.addEventListener('change', () => {
+        if (modeSelectRadio.checked) {
+            mode = Mode.SELECT;
+        }
+    });
 
     initializeChip();
 }
@@ -17,16 +45,16 @@ function draw() {
     background(255);
     if (chip) {
         // Draw couplers first to ensure they're under the qubits
-        stroke(couplerColor);
-        strokeWeight(2);
         chip.couplers.forEach(coupler => {
-            coupler.display(scaleFunc);
+            let color = coupler.disabled ? disabledCouplerColor : workCouplerColor;
+            coupler.display(color, scaleFunc);
         });
 
         // Draw qubits
-        strokeWeight(1);
+        strokeWeight(2.5);
         chip.qubits.forEach(qubit => {
-            qubit.display(scaleFunc);
+            let color = qubit.disabled ? disabledQubitColor : workQubitColor;
+            qubit.display(color, scaleFunc);
         });
     }
 }
@@ -52,6 +80,64 @@ function initializeChip() {
         let scaled_y = (y - chip_center[1]) * ratio + canvas_center[1];
         return [scaled_x, scaled_y];
     };
+
+    let spacing = [scaleFunc(1, 1)[0] - scaleFunc(0, 0)[0], scaleFunc(1, 1)[1] - scaleFunc(0, 0)[1]];
+    sizeScale = Math.min(spacing[0], spacing[1]);
+}
+
+function mouseClicked() {
+    console.log('mouse clicked');
+    if (mode === Mode.TOPOLOGY) {
+        // disable/enable qubit
+        for (let qubit of chip.qubits) {
+            let [x, y] = scaleFunc(qubit.x, qubit.y);
+            if (isClickOnQubit(qubit)) {
+                qubit.disabled = !qubit.disabled;
+                return;
+            }
+        }
+        // disable/enable coupler
+        for (let coupler of chip.couplers) {
+            let [x1, y1] = scaleFunc(coupler.qubitA.x, coupler.qubitA.y);
+            let [x2, y2] = scaleFunc(coupler.qubitB.x, coupler.qubitB.y);
+            if (distToLine(mouseX, mouseY, x1, y1, x2, y2) < 2) {
+                coupler.disabled = !coupler.disabled;
+                return;
+            }
+        };
+    }
+}
+
+function doubleClicked() {
+    if (mode === Mode.SELECT) {
+        return;
+    }
+    for (let qubit of chip.qubits) {
+        if (isClickOnQubit(qubit)) {
+            chip.delete_qubit(qubit);
+            return;
+        }
+    };
+}
+
+function isClickOnQubit(qubit) {
+    let [x, y] = scaleFunc(qubit.x, qubit.y);
+    return dist(mouseX, mouseY, x, y) < sizeScale * diameterScale / 2;
+}
+
+function distToLine(px, py, x1, y1, x2, y2) {
+    let dx = x2 - x1;
+    let dy = y2 - y1;
+    let len_sq = dx * dx + dy * dy;
+
+    let t = ((px - x1) * dx + (py - y1) * dy) / len_sq;
+    t = Math.max(0, Math.min(1, t)); // Clamp t to ensure it's within the line segment
+
+    let nearestX = x1 + t * dx;
+    let nearestY = y1 + t * dy;
+
+    let distSq = (px - nearestX) * (px - nearestX) + (py - nearestY) * (py - nearestY);
+    return Math.sqrt(distSq);
 }
 
 class Qubit {
@@ -59,17 +145,16 @@ class Qubit {
         this.id = id;
         this.x = x;
         this.y = y;
+        this.disabled = false;
     }
 
-    display(scaleFunc) {
+    display(qubitColor, scaleFunc) {
         fill(qubitColor);
         let [x, y] = scaleFunc(this.x, this.y);
-        let [x1, y1] = scaleFunc(this.x + 1, this.y + 1);
-        let sizeScale = Math.min(x1 - x, y1 - y);
-        ellipse(x, y, sizeScale / 2);
+        ellipse(x, y, sizeScale * diameterScale);
         fill(textColor);
         textAlign(CENTER, CENTER);
-        textSize(sizeScale / 3.5);
+        textSize(sizeScale / 3);
         text(this.id, x, y);
     }
 
@@ -85,7 +170,9 @@ class Coupler {
         this.qubitB = qubitB;
     }
 
-    display(scaleFunc) {
+    display(couplerColor, scaleFunc) {
+        strokeWeight(5);
+        stroke(couplerColor);
         let [x1, y1] = scaleFunc(this.qubitA.x, this.qubitA.y);
         let [x2, y2] = scaleFunc(this.qubitB.x, this.qubitB.y);
         line(x1, y1, x2, y2);
@@ -96,8 +183,6 @@ class Chip {
     constructor(qubits, couplers) {
         this.qubits = qubits;
         this.couplers = couplers;
-        this.disabled_qubits = [];
-        this.disabled_couplers = [];
     }
 
     center() {
@@ -110,26 +195,34 @@ class Chip {
         return this.qubits.length;
     }
 
-    num_functional_qubits() {
-        return this.qubits.length - this.disabled_qubits.length;
+    num_couplers() {
+        return this.couplers.length;
     }
 
-    disable_qubit(qubit) {
-        this.disabled_qubits.push(qubit);
+    disabled_qubits() {
+        return this.qubits.filter(q => q.disabled);
     }
 
-    disable_coupler(coupler) {
-        this.disabled_couplers.push(coupler);
+    disabled_couplers() {
+        return this.couplers.filter(c => c.disabled);
+    }
+
+    functional_qubits() {
+        return this.qubits.filter(q => !q.disabled);
+    }
+
+    functional_couplers() {
+        return this.couplers.filter(c => !c.disabled);
     }
 
     delete_qubit(qubit) {
-        this.qubits = this.qubits.filter(q => q !== qubit);
-        this.disabled_qubits = this.disabled_qubits.filter(q => q !== qubit);
-    }
-
-    delete_coupler(coupler) {
-        this.couplers = this.couplers.filter(c => c !== coupler);
-        this.disabled_couplers = this.disabled_couplers.filter(c => c !== coupler);
+        this.qubits = this.qubits.filter(q => q !== qubit).map(q => {
+            if (q.id > qubit.id) {
+                q.id -= 1;
+            }
+            return q;
+        });
+        this.couplers = this.couplers.filter(c => c.qubitA !== qubit && c.qubitB !== qubit);
     }
 }
 
@@ -137,6 +230,7 @@ function make_chip(chip_width, chip_height, useOriginAsQubit, qubitNameLength = 
     // qubits
     let qid = 0;
     let qubits = [];
+    let qubitDict = {};
     for (let y = 0; y < chip_height; y++) {
         let even_row = y % 2 === 0;
         let rowOffset = even_row == useOriginAsQubit ? 0 : 1;
@@ -145,18 +239,18 @@ function make_chip(chip_width, chip_height, useOriginAsQubit, qubitNameLength = 
             let posY = y * 1;
             let qubit = new Qubit(qid, posX, posY);
             qubits.push(qubit);
+            qubitDict[[posX, posY]] = qubit;
             qid += 1;
         }
     }
     // couplers
     let couplers = [];
     for (let qubit of qubits) {
-        let qubit_ld = new Qubit(qubit.id, qubit.x - 1, qubit.y + 1);
-        let qubit_rd = new Qubit(qubit.id, qubit.x + 1, qubit.y + 1);
-        for (let qubit_other of [qubit_ld, qubit_rd]) {
-            if (qubits.some(q => q.isSamePos(qubit_other))) {
-                let coupler_id = getCouplerName(qubit, qubit_other, qubitNameLength);
-                let coupler = new Coupler(coupler_id, qubit, qubit_other);
+        for (let otherCoords of [[qubit.x - 1, qubit.y + 1], [qubit.x + 1, qubit.y + 1]]) {
+            if (otherCoords in qubitDict) {
+                otherQubit = qubitDict[otherCoords];
+                let coupler_id = getCouplerName(qubit, otherQubit, qubitNameLength);
+                let coupler = new Coupler(coupler_id, qubit, otherQubit);
                 couplers.push(coupler);
             }
         }

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Quantum Chip Selector</title>
-    <script src="./scripts/p5.min.js"></script>
+    <script src="./lib/p5.min.js"></script>
     <script src="sketch.js"></script>
     <style>
         body {
@@ -79,6 +79,11 @@
             margin-right: 5px;
         }
 
+        .inline {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
         .btn {
             background-color: #007bff;
             color: #fff;
@@ -123,8 +128,24 @@
             </div>
 
             <div class="form-group">
-                <input type="checkbox" id="useOriginAsQubit">
-                Use Origin as Qubit
+                <div class="inline">
+                    <input type="checkbox" id="useOriginAsQubit">
+                </div>
+                <div class="inline">
+                    <p>Use Origin as Qubit</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <h4>Select Mode:</h4>
+                <div class="inline">
+                    <input type="radio" id="modeTopology" name="mode" value="topology" checked>
+                    Topology
+                </div>
+                <div class="inline">
+                    <input type="radio" id="modeSelect" name="mode" value="select">
+                    Select
+                </div>
             </div>
 
             <button class="btn" onclick="initializeChip()">Draw Chip</button>
