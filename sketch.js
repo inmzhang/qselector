@@ -195,12 +195,12 @@ function mouseClicked() {
 }
 
 function doubleClicked() {
-    if (mode === Mode.SELECT) {
+    if (mode !== Mode.TOPOLOGY) {
         return;
     }
     for (let qubit of chip.qubits) {
         if (isClickOnQubit(qubit)) {
-            chip.delete_qubit(qubit);
+            chip.deleteQubit(qubit);
             return;
         }
     }
