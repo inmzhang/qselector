@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quantum Chip Selector</title>
+    <script src="./scripts/p5.min.js"></script>
+    <script src="sketch.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            min-height: 100vh;
+            justify-content: center;
+            align-items: center;
+            background-color: #f3f3f3;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 80%;
+            max-width: 1600px;
+            height: 90vh;
+            display: flex;
+        }
+
+        .container h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .form-container {
+            width: 20%;
+            padding-right: 20px;
+            box-sizing: border-box;
+        }
+
+        .visual-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding-left: 10px;
+        }
+
+        .chipCanvas {
+            flex-grow: 1;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .form-group input[type="number"],
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .form-group input[type="checkbox"] {
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .btn {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .btn:focus {
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h1>Settings</h1>
+
+            <div class="form-group">
+                <label for="chipWidth">Chip Width:</label>
+                <input type="number" id="chipWidth" value="4" min="1">
+            </div>
+
+            <div class="form-group">
+                <label for="chipHeight">Chip Height:</label>
+                <input type="number" id="chipHeight" value="4" min="1">
+            </div>
+
+            <div class="form-group">
+                <label for="qubitNameLength">Qubit Name Length:</label>
+                <select id="qubitNameLength">
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <input type="checkbox" id="useOriginAsQubit">
+                Use Origin as Qubit
+            </div>
+
+            <button class="btn" onclick="initializeChip()">Draw Chip</button>
+        </div>
+
+        <div class="visual-container">
+            <h1>Quantum Chip Visualization</h1>
+            <div id="chipCanvas" class="chipCanvas"></div>
+        </div>
+    </div>
+</body>
+
+</html>
