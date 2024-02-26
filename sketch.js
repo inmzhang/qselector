@@ -72,6 +72,8 @@ function draw() {
       qubit.display(color, scaleFunc);
     });
   }
+
+  displayStats();
 }
 
 function getQubitColor(qubit) {
@@ -95,12 +97,13 @@ function getCouplerColor(coupler) {
 function initializeChip() {
   const chipWidth = parseInt(document.getElementById("chipWidth").value);
   const chipHeight = parseInt(document.getElementById("chipHeight").value);
+  const qubitStartIdx = parseInt(document.getElementById("qubitStartIndex").value);
   const useOriginAsQubit = document.getElementById("useOriginAsQubit").checked;
   const qubitNameLength = parseInt(
     document.getElementById("qubitNameLength").value
   );
 
-  chip = makeChip(chipWidth, chipHeight, useOriginAsQubit, qubitNameLength);
+  chip = makeChip(chipWidth, chipHeight, useOriginAsQubit, qubitStartIdx, qubitNameLength);
 
   const chip_center = chip.center();
   const canvas_center = [width / 2, height / 2];
@@ -192,6 +195,50 @@ function distToLine(px, py, x1, y1, x2, y2) {
   let distSq =
     (px - nearestX) * (px - nearestX) + (py - nearestY) * (py - nearestY);
   return Math.sqrt(distSq);
+}
+
+function displayStats() {
+  const margin = 10;
+  const statsTextSize = 14;
+  const statsBoxWidth = 150;
+  const statsBoxHeight = 100;
+  const statsBoxX = margin;
+  const statsBoxY = margin;
+  const statsBoxColor = "rgba(255, 255, 255, 0.7)";
+
+  const numWorkQubits = chip.functionalQubits().length;
+  const numWorkCouplers = chip.functionalCouplers().length;
+
+  // Draw the stats box
+  fill(statsBoxColor);
+  stroke(0);
+  rect(statsBoxX, statsBoxY, statsBoxWidth, statsBoxHeight, 10);
+
+  // Display the number of work qubits and work couplers
+  fill(0);
+  textSize(statsTextSize);
+  strokeWeight(1);
+  textAlign(LEFT, TOP);
+  text(
+    `Active Qubits: ${numWorkQubits}`,
+    statsBoxX + margin,
+    statsBoxY + margin
+  );
+  text(
+    `Active Couplers: ${numWorkCouplers}`,
+    statsBoxX + margin,
+    statsBoxY + margin * 2 + statsTextSize
+  );
+  text(
+    `Selected Qubits: ${chip.selectedQubits().length}`,
+    statsBoxX + margin,
+    statsBoxY + margin * 3 + statsTextSize * 2
+  );
+  text(
+    `Selected Couplers: ${chip.selectedCouplers().length}`,
+    statsBoxX + margin,
+    statsBoxY + margin * 4 + statsTextSize * 3
+  );
 }
 
 class Qubit {
@@ -310,10 +357,11 @@ function makeChip(
   chip_width,
   chip_height,
   useOriginAsQubit,
+  qubitStartIdx,
   qubitNameLength = 3
 ) {
   // qubits
-  let qid = 0;
+  let qid = qubitStartIdx;
   let qubits = [];
   let qubitDict = {};
   for (let y = 0; y < chip_height; y++) {
