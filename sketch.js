@@ -1,9 +1,9 @@
 const Mode = {
-    TOPOLOGY: 0,
-    QUBIT: 1,
-    COUPLER: 2,
-    QATTR: 3,
-    CATTR: 4,
+    TOPOLOGY: "Topology",
+    QUBIT: "Qubit",
+    COUPLER: "Coupler",
+    QATTR: "QubitAttr",
+    CATTR: "CouplerAttr",
 };
 const Colors = {
     WORK_QUBIT: "rgb(0, 122, 255)",
@@ -14,22 +14,25 @@ const Colors = {
 };
 const diameterScale = 2 / 3;
 
-let chip, scaleFunc, sizeScale, mode;
+let storage;
+let scaleFunc, sizeScale;
 let dragStartX, dragStartY;
 let dragging = false;
 let selectionBox = { x: 0, y: 0, width: 0, height: 0 };
 
 
 function setup() {
+    storage = new Storage();
     initializeCanvas();
-    setupModeListeners();
-    initializeChip();
+    setupListeners();
+    initializeStorage();
 }
 
 function draw() {
     background(255);
-    chip?.draw();
-    chip?.displayStats();
+    setupScaling();
+    storage.chip?.draw();
+    storage.chip?.displayStats();
     draggingBox();
 }
 
@@ -41,71 +44,72 @@ function initializeCanvas() {
     createControlButtons(canvasDiv);
 }
 
-// Setup event listeners for mode selection
-function setupModeListeners() {
-    setupModeSelector("modeSelectTopology", Mode.TOPOLOGY);
-    setupModeSelector("modeSelectQubit", Mode.QUBIT);
-    setupModeSelector("modeSelectCoupler", Mode.COUPLER);
-    setupModeSelector("modeSelectQubitAttr", Mode.QATTR);
-    setupModeSelector("modeSelectCouplerAttr", Mode.CATTR);
+function initializeStorage(skipCache = false) {
+    // Load from local storage if available
+    let loaded = storage.loadFromLocalStorage();
+    if (!loaded || skipCache) {
+        storage.initializeFromDom();
+        storage.saveToLocalStorage();
+        return;
+    }
+    storage.writeToDoM();
 }
 
-// Chip Initialization
-function initializeChip() {
-    chip = new Chip(
-        document.getElementById("chipWidth").value,
-        document.getElementById("chipHeight").value,
-        document.getElementById("useOriginAsQubit").checked,
-        document.getElementById("qubitStartIndex").value,
-        document.getElementById("qubitNameLength").value
-    );
-    setupScaling();
-}
 
-function draggingBox() {
-    // Draw selection box
-    if (dragging && (mode === Mode.QUBIT || mode === Mode.COUPLER)) {
-        noFill();
-        stroke(0);
-        strokeWeight(1);
-        rect(selectionBox.x, selectionBox.y, selectionBox.width, selectionBox.height);
+
+class Storage {
+    constructor() {
+        this.chip = undefined;
+        this.mode = undefined;
+        this.preset = undefined;
     }
 
-    selectionBox = { x: 0, y: 0, width: 0, height: 0 };
-}
-
-// Mouse interaction functions
-function mouseClicked() { chip.handleClick(mouseX, mouseY, mode); }
-
-function doubleClicked() { chip.handleDoubleClick(mouseX, mouseY, mode); }
-
-function mousePressed() {
-    if (mode === Mode.QUBIT || mode === Mode.COUPLER) {
-        dragStartX = mouseX;
-        dragStartY = mouseY;
-        dragging = true;
+    loadFromLocalStorage() {
+        let local = JSON.parse(localStorage.getItem("qselector"));
+        if (local !== null) {
+            this.chip = new Chip();
+            this.chip.fromJSON(local["chip"]);
+            this.mode = local["mode"];
+            this.preset = local["preset"];
+            return true;
+        }
+        return false;
     }
-}
 
-function mouseDragged() {
-    if ((mode === Mode.QUBIT || mode === Mode.COUPLER) && dragging) {
-        let minX = min(dragStartX, mouseX);
-        let minY = min(dragStartY, mouseY);
-        let maxX = max(dragStartX, mouseX);
-        let maxY = max(dragStartY, mouseY);
-
-        // Update selection box dimensions
-        selectionBox.x = minX;
-        selectionBox.y = minY;
-        selectionBox.width = maxX - minX;
-        selectionBox.height = maxY - minY;
-
-        chip.handleDrag(minX, minY, maxX, maxY);
+    saveToLocalStorage() {
+        localStorage.setItem("qselector", JSON.stringify({
+            chip: this.chip.toJSON(),
+            mode: this.mode,
+            preset: this.preset
+        }));
     }
-}
 
-function mouseReleased() {
-    dragging = false;
+    initializeFromDom() {
+        let w = parseInt(document.getElementById("chipWidth").value);
+        let h = parseInt(document.getElementById("chipHeight").value);
+        let qubitStartIdx = parseInt(document.getElementById("qubitStartIndex").value);
+        let qubitNameLength = parseInt(document.getElementById("qubitNameLength").value);
+        let useOriginAsQubit = document.getElementById("useOriginAsQubit").checked;
+        let presetTopology = document.getElementById("loadPreset").value;
+        let selectMode = document.querySelector('input[name="mode"]:checked').value;
+        if (presetTopology !== "NULL") {
+            loadPresetTopology(presetTopology);
+        } else {
+            this.chip = new Chip(w, h, useOriginAsQubit, qubitStartIdx, qubitNameLength);
+        }
+        this.mode = selectMode;
+        this.preset = presetTopology;
+    }
+
+    writeToDoM() {
+        document.getElementById("chipWidth").value = this.chip.width;
+        document.getElementById("chipHeight").value = this.chip.height;
+        document.getElementById("qubitStartIndex").value = this.chip.qubitStartIdx;
+        document.getElementById("qubitNameLength").value = this.chip.qubitNameLength;
+        document.getElementById("useOriginAsQubit").checked = this.chip.useOriginAsQubit;
+        document.getElementById("loadPreset").value = this.preset;
+        document.getElementById("modeSelect" + this.mode).checked = true;
+    }
 }
 
 class Qubit {
@@ -146,6 +150,26 @@ class Qubit {
     reset() {
         this.selected = false;
         this.attribute = undefined;
+    }
+
+    toJSON() {
+        return {
+            id: this.id,
+            x: this.x,
+            y: this.y,
+            disabled: this.disabled,
+            selected: this.selected,
+            attribute: this.attribute
+        };
+    }
+
+    fromJSON(json) {
+        this.id = json.id;
+        this.x = json.x;
+        this.y = json.y;
+        this.disabled = json.disabled;
+        this.selected = json.selected;
+        this.attribute = json.attribute;
     }
 }
 
@@ -193,14 +217,34 @@ class Coupler {
         this.selected = false;
         this.attribute = undefined;
     }
+
+    toJSON() {
+        return {
+            qubitA: this.qubitA.id,
+            qubitB: this.qubitB.id,
+            disabled: this.disabled,
+            selected: this.selected,
+            attribute: this.attribute
+        };
+    }
+
+    fromJSON(json, qubits) {
+        this.qubitA = qubits.find(q => q.id === json.qubitA);
+        this.qubitB = qubits.find(q => q.id === json.qubitB);
+        this.disabled = json.disabled;
+        this.selected = json.selected;
+        this.attribute = json.attribute;
+    }
 }
 
 class Chip {
     constructor(width, height, useOriginAsQubit, qubitStartIdx, qubitNameLength) {
-        this.width = parseInt(width);
-        this.height = parseInt(height);
+        this.width = width;
+        this.height = height;
+        this.qubitStartIdx = qubitStartIdx;
+        this.qubitNameLength = qubitNameLength;
+        this.useOriginAsQubit = useOriginAsQubit;
         [this.qubits, this.couplers] = this.initialize(useOriginAsQubit, qubitStartIdx);
-        this.qubitNameLength = parseInt(qubitNameLength);
     }
 
     center() {
@@ -233,18 +277,30 @@ class Chip {
         return this.couplers.filter((c) => c.selected).length;
     }
 
-    deleteQubit(qubit) {
+    deleteQubit(qid) {
         this.qubits = this.qubits
-            .filter((q) => q !== qubit)
-            .map((q) => {
-                if (q.id > qubit.id) {
-                    q.id -= 1;
-                }
-                return q;
-            });
+            .filter((q) => q.id !== qid);
         this.couplers = this.couplers.filter(
-            (c) => c.qubitA !== qubit && c.qubitB !== qubit
+            (c) => c.qubitA.id !== qid && c.qubitB.id !== qid
         );
+        this.qubits.forEach((q) => {
+            if (q.id > qid) {
+                q.id -= 1;
+            }
+        });
+        storage.saveToLocalStorage();
+    }
+
+    deleteQubits(qids) {
+        this.qubits = this.qubits.filter((q) => !qids.includes(q.id));
+        this.couplers = this.couplers.filter(
+            (c) => !qids.includes(c.qubitA.id) && !qids.includes(c.qubitB.id)
+        );
+
+        this.qubits.forEach((q) => {
+            q.id -= qids.filter((id) => id < q.id).length;
+        });
+        storage.saveToLocalStorage();
     }
 
     reset() {
@@ -254,11 +310,11 @@ class Chip {
 
     getSelectedQubitsPythonObject() {
         let selectedQubits = this.qubits.filter((q) => q.selected);
-        if (mode === Mode.QUBIT) {
+        if (storage.mode === Mode.QUBIT) {
             return '[' + selectedQubits
                 .map(qubit => `'${qubit.getName(this.qubitNameLength)}'`)
                 .join(', ') + ']';
-        } else if (mode === Mode.QATTR) {
+        } else if (storage.mode === Mode.QATTR) {
             return '{' + selectedQubits
                 .map(q => `'${q.getName(this.qubitNameLength)}': ${q.attribute}`)
                 .join(', ') + '}';
@@ -267,11 +323,11 @@ class Chip {
 
     getSelectedCouplersPythonObject() {
         let selectedCouplers = this.couplers.filter((c) => c.selected);
-        if (mode === Mode.COUPLER) {
+        if (storage.mode === Mode.COUPLER) {
             return '[' + selectedCouplers
                 .map(coupler => `'${coupler.getName(this.qubitNameLength)}'`)
                 .join(', ') + ']';
-        } else if (mode === Mode.CATTR) {
+        } else if (storage.mode === Mode.CATTR) {
             return '{' + selectedCouplers
                 .map(c => `'${c.getName(this.qubitNameLength)}': ${c.attribute}`)
                 .join(', ') + '}';
@@ -283,13 +339,14 @@ class Chip {
         this.qubits.forEach(qubit => qubit.draw());
     }
 
-    handleClick(x, y, mode) {
+    handleClick(x, y) {
+        let mode = storage.mode;
         if (mode === Mode.TOPOLOGY || mode === Mode.QUBIT || mode === Mode.QATTR) {
-            for (let qubit of chip.qubits) {
+            for (let qubit of this.qubits) {
                 if (qubit.isClicked(x, y)) {
                     if (mode === Mode.TOPOLOGY) qubit.disabled = !qubit.disabled;
                     else if (mode === Mode.QUBIT) {
-                        qubit.selected = true;
+                        qubit.selected = !qubit.selected;
                     } else if (mode === Mode.QATTR) {
                         let attribute = prompt("Enter attribute for the qubit:", qubit.attribute);
                         // If the user prompt with empty, attribute will be null
@@ -306,16 +363,17 @@ class Chip {
                             qubit.attribute = attribute;
                         }
                     }
+                    storage.saveToLocalStorage();
                     return;
                 }
             }
         }
         if (mode === Mode.TOPOLOGY || mode === Mode.COUPLER || mode === Mode.CATTR) {
-            for (let coupler of chip.couplers) {
+            for (let coupler of this.couplers) {
                 if (coupler.isClicked(x, y)) {
                     if (mode === Mode.TOPOLOGY) coupler.disabled = !coupler.disabled;
                     else if (mode === Mode.COUPLER) {
-                        coupler.selected = true;
+                        coupler.selected = !coupler.selected;
                     } else if (mode === Mode.CATTR) {
                         let attribute = prompt("Enter attribute for the coupler:", coupler.attribute);
                         if (attribute === "") {
@@ -328,24 +386,26 @@ class Chip {
                             coupler.attribute = attribute;
                         }
                     }
+                    storage.saveToLocalStorage();
                     return;
                 }
             }
         }
     }
 
-    handleDoubleClick(x, y, mode) {
-        if (mode === Mode.TOPOLOGY) {
-            this.qubits.forEach(qubit => {
+    handleDoubleClick(x, y) {
+        if (storage.mode === Mode.TOPOLOGY) {
+            for (let qubit of this.qubits) {
                 if (qubit.isClicked(x, y)) {
-                    this.deleteQubit(qubit);
+                    this.deleteQubit(qubit.id);
+                    return;
                 }
-            })
+            }
         }
     }
 
     handleDrag(minX, minY, maxX, maxY) {
-        if (mode === Mode.QUBIT) {
+        if (storage.mode === Mode.QUBIT) {
             for (let qubit of this.qubits) {
                 if (qubit.isSelected(minX, minY, maxX, maxY)) {
                     qubit.selected = true;
@@ -358,12 +418,13 @@ class Chip {
                 }
             }
         }
+        storage.saveToLocalStorage();
     }
 
     initialize(useOriginAsQubit, qubitStartIdx) {
         let qubits = [];
         let qubitDict = {};
-        let qid = parseInt(qubitStartIdx);
+        let qid = qubitStartIdx;
 
         for (let y = 0; y < this.height; y++) {
             let even_row = y % 2 === 0;
@@ -439,42 +500,43 @@ class Chip {
         );
     }
 
-}
-
-// Create control buttons and position them
-function createControlButtons(canvasDiv) {
-    const canvasPosition = canvasDiv.getBoundingClientRect();
-    createButtonAt("Copy Selected Qubits", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 10, copySelectedQubits);
-    createButtonAt("Copy Selected Couplers", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 40, copySelectedCouplers);
-}
-
-// Create a button at a specified position
-function createButtonAt(label, x, y, callback) {
-    const button = createButton(label);
-    button.position(x, y);
-    button.mousePressed(callback);
-}
-
-// Create a mode selector radio button listener
-function setupModeSelector(elementId, modeValue) {
-    const radioButton = document.getElementById(elementId);
-    if (radioButton.checked) {
-        mode = modeValue;
+    toJSON() {
+        return {
+            width: this.width,
+            height: this.height,
+            qubitStartIdx: this.qubitStartIdx,
+            qubitNameLength: this.qubitNameLength,
+            useOriginAsQubit: this.useOriginAsQubit,
+            qubits: this.qubits.map(q => q.toJSON()),
+            couplers: this.couplers.map(c => c.toJSON())
+        };
     }
-    radioButton.addEventListener("change", () => {
-        if (radioButton.checked) {
-            mode = modeValue;
-            chip.reset();
-        }
-    });
+
+    fromJSON(json) {
+        this.width = json.width;
+        this.height = json.height;
+        this.qubitStartIdx = json.qubitStartIdx;
+        this.qubitNameLength = json.qubitNameLength;
+        this.useOriginAsQubit = json.useOriginAsQubit;
+        this.qubits = json.qubits.map(q => {
+            let qubit = new Qubit();
+            qubit.fromJSON(q);
+            return qubit;
+        });
+        this.couplers = json.couplers.map(c => {
+            let coupler = new Coupler();
+            coupler.fromJSON(c, this.qubits);
+            return coupler;
+        });
+    }
 }
 
 // Setup scaling function based on chip and canvas size
 function setupScaling() {
-    const chipCenter = chip.center();
+    const chipCenter = storage.chip.center();
     const canvasCenter = [width / 2, height / 2];
-    const widthRatio = (3 * width) / 4 / chip.width / 2;
-    const heightRatio = (3 * height) / 4 / chip.height;
+    const widthRatio = (3 * width) / 4 / storage.chip.width / 2;
+    const heightRatio = (3 * height) / 4 / storage.chip.height;
     const ratio = Math.min(widthRatio, heightRatio);
 
     scaleFunc = (x, y) => {
@@ -491,10 +553,22 @@ function setupScaling() {
     sizeScale = Math.min(spacing[0], spacing[1]);
 }
 
-// Clipboard copy functions
+// Create control buttons and position them
+function createControlButtons(canvasDiv) {
+    const canvasPosition = canvasDiv.getBoundingClientRect();
+    createButtonAt("Copy Selected Qubits", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 10, copySelectedQubits);
+    createButtonAt("Copy Selected Couplers", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 40, copySelectedCouplers);
+}
+
+function createButtonAt(label, x, y, callback) {
+    const button = createButton(label);
+    button.position(x, y);
+    button.mousePressed(callback);
+}
+
 function copySelectedQubits() {
     navigator.clipboard.writeText(
-        chip.getSelectedQubitsPythonObject()
+        storage.chip.getSelectedQubitsPythonObject()
     )
         .then(() => console.log("Python list copied to clipboard"))
         .catch(err => console.error("Unable to copy to clipboard:", err));
@@ -502,12 +576,112 @@ function copySelectedQubits() {
 
 function copySelectedCouplers() {
     navigator.clipboard.writeText(
-        chip.getSelectedCouplersPythonObject()
+        storage.chip.getSelectedCouplersPythonObject()
     )
         .then(() => console.log("Selected couplers copied to clipboard"))
         .catch(err => console.error("Failed to copy selected couplers to clipboard:", err));
 }
 
+// Listeners
+function setupListeners() {
+    setupModeListener("modeSelectTopology", Mode.TOPOLOGY);
+    setupModeListener("modeSelectQubit", Mode.QUBIT);
+    setupModeListener("modeSelectCoupler", Mode.COUPLER);
+    setupModeListener("modeSelectQubitAttr", Mode.QATTR);
+    setupModeListener("modeSelectCouplerAttr", Mode.CATTR);
+    setupPresetTopologyListener();
+}
+
+// Create a mode selector radio button listener
+function setupModeListener(elementId, modeValue) {
+    const radioButton = document.getElementById(elementId);
+    if (radioButton.checked) {
+        storage.mode = modeValue;
+    }
+    radioButton.addEventListener("change", () => {
+        if (radioButton.checked) {
+            storage.mode = modeValue;
+            storage.chip.reset();
+            storage.saveToLocalStorage();
+        }
+    });
+}
+
+function setupPresetTopologyListener() {
+    const presetTopologySelect = document.getElementById("loadPreset");
+    presetTopologySelect.addEventListener("change", () => {
+        const selectedTopology = presetTopologySelect.value;
+        storage.preset = selectedTopology;
+        loadPresetTopology(selectedTopology);
+        storage.saveToLocalStorage();
+        initializeStorage();
+    });
+}
+
+function loadPresetTopology(selectedTopology) {
+    if (selectedTopology === "NULL") {
+        return;
+    } else if (selectedTopology === "ZCZ3") {
+        storage.chip = new Chip(8, 15, true, 1, 3);
+        storage.chip.deleteQubits([1, 31, 61, 91, 23, 53, 83, 113]);
+    } else if (selectedTopology == "ZCZ2") {
+        storage.chip = new Chip(7, 11, false, 0, 2);
+        storage.chip.deleteQubits([12, 25, 38, 51, 64]);
+    } else if (selectedTopology == "Sycamore") {
+        storage.chip = new Chip(7, 9, true, 1, 2);
+        storage.chip.deleteQubits([7, 20, 33, 46, 59]);
+    }
+}
+
+
+// Mouse interaction functions
+function mouseClicked() { storage.chip.handleClick(mouseX, mouseY); }
+
+function doubleClicked() { storage.chip.handleDoubleClick(mouseX, mouseY); }
+
+function mousePressed() {
+    if (storage.mode === Mode.QUBIT || storage.mode === Mode.COUPLER) {
+        dragStartX = mouseX;
+        dragStartY = mouseY;
+        dragging = true;
+    }
+}
+
+function mouseDragged() {
+    if ((storage.mode === Mode.QUBIT || storage.mode === Mode.COUPLER) && dragging) {
+        let minX = min(dragStartX, mouseX);
+        let minY = min(dragStartY, mouseY);
+        let maxX = max(dragStartX, mouseX);
+        let maxY = max(dragStartY, mouseY);
+
+        // Update selection box dimensions
+        selectionBox.x = minX;
+        selectionBox.y = minY;
+        selectionBox.width = maxX - minX;
+        selectionBox.height = maxY - minY;
+
+        storage.chip.handleDrag(minX, minY, maxX, maxY);
+    }
+}
+
+function mouseReleased() {
+    dragging = false;
+}
+
+function draggingBox() {
+    let mode = storage.mode;
+    // Draw selection box
+    if (dragging && (mode === Mode.QUBIT || mode === Mode.COUPLER)) {
+        noFill();
+        stroke(0);
+        strokeWeight(1);
+        rect(selectionBox.x, selectionBox.y, selectionBox.width, selectionBox.height);
+    }
+
+    selectionBox = { x: 0, y: 0, width: 0, height: 0 };
+}
+
+// Utility functions
 function distToSegment(px, py, x1, y1, x2, y2) {
     let dx = x2 - x1;
     let dy = y2 - y1;
@@ -522,4 +696,9 @@ function distToSegment(px, py, x1, y1, x2, y2) {
     let distSq =
         (px - nearestX) * (px - nearestX) + (py - nearestY) * (py - nearestY);
     return Math.sqrt(distSq);
+}
+
+function resetSelections() {
+    storage.chip.reset();
+    storage.saveToLocalStorage();
 }
