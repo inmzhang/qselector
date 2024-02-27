@@ -523,3 +523,7 @@ function distToSegment(px, py, x1, y1, x2, y2) {
         (px - nearestX) * (px - nearestX) + (py - nearestY) * (py - nearestY);
     return Math.sqrt(distSq);
 }
+
+function resetSelections() {
+    chip.reset();
+}
