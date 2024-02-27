@@ -310,11 +310,11 @@ class Chip {
 
     getSelectedQubitsPythonObject() {
         let selectedQubits = this.qubits.filter((q) => q.selected);
-        if (storage.mode === Mode.QUBIT) {
+        if (isListMode(storage.mode)) {
             return '[' + selectedQubits
                 .map(qubit => `'${qubit.getName(this.qubitNameLength)}'`)
                 .join(', ') + ']';
-        } else if (storage.mode === Mode.QATTR) {
+        } else if (isAttrMode(storage.mode)) {
             return '{' + selectedQubits
                 .map(q => `'${q.getName(this.qubitNameLength)}': ${q.attribute}`)
                 .join(', ') + '}';
@@ -323,11 +323,11 @@ class Chip {
 
     getSelectedCouplersPythonObject() {
         let selectedCouplers = this.couplers.filter((c) => c.selected);
-        if (storage.mode === Mode.COUPLER) {
+        if (isListMode(storage.mode)) {
             return '[' + selectedCouplers
                 .map(coupler => `'${coupler.getName(this.qubitNameLength)}'`)
                 .join(', ') + ']';
-        } else if (storage.mode === Mode.CATTR) {
+        } else if (isAttrMode(storage.mode)) {
             return '{' + selectedCouplers
                 .map(c => `'${c.getName(this.qubitNameLength)}': ${c.attribute}`)
                 .join(', ') + '}';
@@ -595,13 +595,14 @@ function setupListeners() {
 // Create a mode selector radio button listener
 function setupModeListener(elementId, modeValue) {
     const radioButton = document.getElementById(elementId);
-    if (radioButton.checked) {
-        storage.mode = modeValue;
-    }
     radioButton.addEventListener("change", () => {
         if (radioButton.checked) {
+            let prevMode = storage.mode;
             storage.mode = modeValue;
-            storage.chip.reset();
+            if ((isAttrMode(prevMode) && !isAttrMode(modeValue)) ||
+                (!isAttrMode(prevMode) && isAttrMode(modeValue))) {
+                storage.chip.reset();
+            }
             storage.saveToLocalStorage();
         }
     });
@@ -632,7 +633,6 @@ function loadPresetTopology(selectedTopology) {
         storage.chip.deleteQubits([7, 20, 33, 46, 59]);
     }
 }
-
 
 // Mouse interaction functions
 function mouseClicked() { storage.chip.handleClick(mouseX, mouseY); }
@@ -696,6 +696,14 @@ function distToSegment(px, py, x1, y1, x2, y2) {
     let distSq =
         (px - nearestX) * (px - nearestX) + (py - nearestY) * (py - nearestY);
     return Math.sqrt(distSq);
+}
+
+function isListMode(mode) {
+    return mode === Mode.QUBIT || mode === Mode.COUPLER;
+}
+
+function isAttrMode(mode) {
+    return mode === Mode.QATTR || mode === Mode.CATTR;
 }
 
 function resetSelections() {
