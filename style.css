@@ -73,8 +73,19 @@ body {
     margin-right: 5px;
 }
 
-.radio {
+.radio-item {
     display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.radio-item label {
+    font-weight: bold;
+}
+
+.radio-item input[type="radio"] {
+    margin-right: 5px;
+    margin-bottom: 5px;
 }
 
 .btn {

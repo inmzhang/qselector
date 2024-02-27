@@ -45,12 +45,26 @@
             <div class="form-group">
                 <h4>Select Mode:</h4>
                 <div class="radio">
-                    <input type="radio" id="modeSelectTopology" name="mode" value="topology" checked>
-                    Topology
-                    <input type="radio" id="modeSelectQubit" name="mode" value="qubit">
-                    Qubit
-                    <input type="radio" id="modeSelectCoupler" name="mode" value="coupler">
-                    Coupler
+                    <div class="radio-item">
+                        <input type="radio" id="modeSelectTopology" name="mode" value="topology" checked>
+                        <label for="modeSelectTopology">Topology</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="modeSelectQubit" name="mode" value="qubit">
+                        <label for="modeSelectQubit">Select Qubits</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="modeSelectCoupler" name="mode" value="coupler">
+                        <label for="modeSelectCoupler">Select Couplers</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="modeSelectQubitAttr" name="mode" value="qattr">
+                        <label for="modeSelectQubitAttr">Select Qubit Attributes</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="modeSelectCouplerAttr" name="mode" value="cattr">
+                        <label for="modeSelectCouplerAttr">Select Coupler Attributes</label>
+                    </div>
                 </div>
             </div>
 

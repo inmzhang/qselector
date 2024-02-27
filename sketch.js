@@ -2,6 +2,8 @@ const Mode = {
     TOPOLOGY: 0,
     QUBIT: 1,
     COUPLER: 2,
+    QATTR: 3,
+    CATTR: 4,
 };
 const Colors = {
     WORK_QUBIT: "rgb(0, 122, 255)",
@@ -44,6 +46,8 @@ function setupModeListeners() {
     setupModeSelector("modeSelectTopology", Mode.TOPOLOGY);
     setupModeSelector("modeSelectQubit", Mode.QUBIT);
     setupModeSelector("modeSelectCoupler", Mode.COUPLER);
+    setupModeSelector("modeSelectQubitAttr", Mode.QATTR);
+    setupModeSelector("modeSelectCouplerAttr", Mode.CATTR);
 }
 
 // Chip Initialization
@@ -111,6 +115,7 @@ class Qubit {
         this.y = y;
         this.disabled = false;
         this.selected = false;
+        this.attribute = undefined;
     }
 
     draw() {
@@ -130,12 +135,17 @@ class Qubit {
     }
 
     isSelected(minX, minY, maxX, maxY) {
-        let [x, y] = scaleFunc(qubit.x, qubit.y);
+        let [x, y] = scaleFunc(this.x, this.y);
         return x >= minX && x <= maxX && y >= minY && y <= maxY;
     }
 
     getName(qubitNameLength) {
         return "Q" + this.id.toString().padStart(qubitNameLength, "0");
+    }
+
+    reset() {
+        this.selected = false;
+        this.attribute = undefined;
     }
 }
 
@@ -145,6 +155,7 @@ class Coupler {
         this.qubitB = qubitB;
         this.disabled = false;
         this.selected = false;
+        this.attribute = undefined;
     }
 
     draw() {
@@ -176,6 +187,11 @@ class Coupler {
         return q1 > q2
             ? "G" + q1.substring(1) + q2.substring(1)
             : "G" + q2.substring(1) + q1.substring(1);
+    }
+
+    reset() {
+        this.selected = false;
+        this.attribute = undefined;
     }
 }
 
@@ -231,23 +247,35 @@ class Chip {
         );
     }
 
-    resetSelections() {
-        this.qubits.forEach((q) => (q.selected = false));
-        this.couplers.forEach((c) => (c.selected = false));
+    reset() {
+        this.qubits.forEach(q => q.reset());
+        this.couplers.forEach(c => c.reset());
     }
 
-    getSelectedQubitsPythonList() {
-        return '[' + this.qubits
-            .filter(qubit => qubit.selected)
-            .map(qubit => `'${qubit.getName(this.qubitNameLength)}'`)
-            .join(', ') + ']';
+    getSelectedQubitsPythonObject() {
+        let selectedQubits = this.qubits.filter((q) => q.selected);
+        if (mode === Mode.QUBIT) {
+            return '[' + selectedQubits
+                .map(qubit => `'${qubit.getName(this.qubitNameLength)}'`)
+                .join(', ') + ']';
+        } else if (mode === Mode.QATTR) {
+            return '{' + selectedQubits
+                .map(q => `'${q.getName(this.qubitNameLength)}': ${q.attribute}`)
+                .join(', ') + '}';
+        }
     }
 
-    getSelectedCouplersPythonList() {
-        return '[' + this.couplers
-            .filter(coupler => coupler.selected)
-            .map(coupler => `'${coupler.getName(this.qubitNameLength)}'`)
-            .join(', ') + ']';
+    getSelectedCouplersPythonObject() {
+        let selectedCouplers = this.couplers.filter((c) => c.selected);
+        if (mode === Mode.COUPLER) {
+            return '[' + selectedCouplers
+                .map(coupler => `'${coupler.getName(this.qubitNameLength)}'`)
+                .join(', ') + ']';
+        } else if (mode === Mode.CATTR) {
+            return '{' + selectedCouplers
+                .map(c => `'${c.getName(this.qubitNameLength)}': ${c.attribute}`)
+                .join(', ') + '}';
+        }
     }
 
     draw() {
@@ -256,20 +284,50 @@ class Chip {
     }
 
     handleClick(x, y, mode) {
-        if (mode === Mode.TOPOLOGY || mode === Mode.QUBIT) {
+        if (mode === Mode.TOPOLOGY || mode === Mode.QUBIT || mode === Mode.QATTR) {
             for (let qubit of chip.qubits) {
                 if (qubit.isClicked(x, y)) {
                     if (mode === Mode.TOPOLOGY) qubit.disabled = !qubit.disabled;
-                    if (mode === Mode.QUBIT) qubit.selected = !qubit.selected;
+                    else if (mode === Mode.QUBIT) {
+                        qubit.selected = true;
+                    } else if (mode === Mode.QATTR) {
+                        let attribute = prompt("Enter attribute for the qubit:", qubit.attribute);
+                        // If the user prompt with empty, attribute will be null
+                        // and the selected state will be false
+                        if (attribute === "") {
+                            qubit.selected = false;
+                            qubit.attribute = undefined;
+                        }
+                        // If the user cancels the prompt, the state should be unchanged
+                        else if (attribute === null) {
+                            return;
+                        } else {
+                            qubit.selected = true;
+                            qubit.attribute = attribute;
+                        }
+                    }
                     return;
                 }
             }
         }
-        if (mode === Mode.TOPOLOGY || mode === Mode.COUPLER) {
+        if (mode === Mode.TOPOLOGY || mode === Mode.COUPLER || mode === Mode.CATTR) {
             for (let coupler of chip.couplers) {
                 if (coupler.isClicked(x, y)) {
                     if (mode === Mode.TOPOLOGY) coupler.disabled = !coupler.disabled;
-                    if (mode === Mode.COUPLER) coupler.selected = !coupler.selected;
+                    else if (mode === Mode.COUPLER) {
+                        coupler.selected = true;
+                    } else if (mode === Mode.CATTR) {
+                        let attribute = prompt("Enter attribute for the coupler:", coupler.attribute);
+                        if (attribute === "") {
+                            coupler.selected = false;
+                            coupler.attribute = undefined;
+                        } else if (attribute === null) {
+                            return;
+                        } else {
+                            coupler.selected = true;
+                            coupler.attribute = attribute;
+                        }
+                    }
                     return;
                 }
             }
@@ -406,7 +464,7 @@ function setupModeSelector(elementId, modeValue) {
     radioButton.addEventListener("change", () => {
         if (radioButton.checked) {
             mode = modeValue;
-            chip.resetSelections();
+            chip.reset();
         }
     });
 }
@@ -436,7 +494,7 @@ function setupScaling() {
 // Clipboard copy functions
 function copySelectedQubits() {
     navigator.clipboard.writeText(
-        chip.getSelectedQubitsPythonList()
+        chip.getSelectedQubitsPythonObject()
     )
         .then(() => console.log("Python list copied to clipboard"))
         .catch(err => console.error("Unable to copy to clipboard:", err));
@@ -444,7 +502,7 @@ function copySelectedQubits() {
 
 function copySelectedCouplers() {
     navigator.clipboard.writeText(
-        chip.getSelectedCouplersPythonList()
+        chip.getSelectedCouplersPythonObject()
     )
         .then(() => console.log("Selected couplers copied to clipboard"))
         .catch(err => console.error("Failed to copy selected couplers to clipboard:", err));
