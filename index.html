@@ -31,7 +31,7 @@
 
             <div class="form-group">
                 <label for="qubitNameLength">Qubit Name Length:</label>
-                <select id="qubitNameLength">
+                <select id="qubitNameLength" class="inline-select">
                     <option value="2">2</option>
                     <option value="3" selected>3</option>
                 </select>
@@ -44,7 +44,7 @@
 
             <div class="form-group">
                 <label for="loadPreset">Load Preset Topology: </label>
-                <select id="loadPreset">
+                <select id="loadPreset" class="inline-select">
                     <option value="NULL" selected>NULL</option>
                     <option value="ZCZ2">ZCZ2</option>
                     <option value="ZCZ3">ZCZ3</option>
@@ -63,9 +63,25 @@
                         <input type="radio" id="modeSelectQubit" name="mode" value="Qubit">
                         <label for="modeSelectQubit">Select Qubits</label>
                     </div>
+                    <div class="select-group">
+                        <select id="qubitGroupSelect" class="group-selection">
+                            <option value="0">&#128997; Group 1</option>
+                            <option value="1">&#129000; Group 2</option>
+                            <option value="2">&#129001; Group 3</option>
+                            <option value="3">&#129002; Group 4</option>
+                        </select>
+                    </div>
                     <div class="radio-item">
                         <input type="radio" id="modeSelectCoupler" name="mode" value="Coupler">
                         <label for="modeSelectCoupler">Select Couplers</label>
+                    </div>
+                    <div class="select-group">
+                        <select id="couplerGroupSelect" class="group-selection">
+                            <option value="0">&#128997; Group 1</option>
+                            <option value="1">&#129000; Group 2</option>
+                            <option value="2">&#129001; Group 3</option>
+                            <option value="3">&#129002; Group 4</option>
+                        </select>
                     </div>
                     <div class="radio-item">
                         <input type="radio" id="modeSelectQubitAttr" name="mode" value="QubitAttr">

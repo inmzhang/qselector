@@ -8,7 +8,12 @@ const Mode = {
 const Colors = {
     WORK_QUBIT: "rgb(0, 122, 255)",
     DISABLED: "rgb(237, 231, 216)",
-    SELECTED: "rgb(245, 91, 91)",
+    SELECTION: [
+        "rgb(234, 67, 53)",
+        "rgb(251, 188, 5)",
+        "rgb(52, 168, 83)",
+        "rgb(170, 45, 237)",
+    ],
     WORK_COUPLER: "rgb(0, 0, 0)",
     TEXT: "rgb(255, 255, 255)"
 };
@@ -43,6 +48,10 @@ function initializeCanvas() {
     const canvas = createCanvas(canvasDiv.offsetWidth, canvasDiv.offsetHeight);
     canvas.parent("chipCanvas");
     createControlButtons(canvasDiv);
+    // Set up mouse listeners
+    canvas.mousePressed(mousePressedImpl);
+    canvas.mouseClicked(mouseClickedImpl);
+    canvas.doubleClicked(doubleClickedImpl);
 }
 
 function initializeStorage(skipCache = false) {
@@ -55,8 +64,6 @@ function initializeStorage(skipCache = false) {
     }
     storage.writeToDoM();
 }
-
-
 
 class Storage {
     constructor() {
@@ -115,6 +122,7 @@ class Storage {
         document.getElementById("useOriginAsQubit").checked = this.chip.useOriginAsQubit;
         document.getElementById("loadPreset").value = this.preset;
         document.getElementById("modeSelect" + this.mode).checked = true;
+        setSelectGroupVisibility(this.mode);
     }
 }
 
@@ -124,14 +132,28 @@ class Qubit {
         this.x = x;
         this.y = y;
         this.disabled = false;
-        this.selected = false;
+        this.selectGroup = null;
         this.attribute = undefined;
+    }
+
+    handleSelect(doNotReset = false) {
+        if (this.disabled) return;
+        if (!doNotReset && this.selected()) {
+            this.selectGroup = null;
+        } else {
+            const selectGroup = document.getElementById("qubitGroupSelect").value;
+            this.selectGroup = parseInt(selectGroup);
+        }
+    }
+
+    selected() {
+        return this.selectGroup !== null;
     }
 
     draw() {
         stroke(0);
         strokeWeight(2.5);
-        fill(this.disabled ? Colors.DISABLED : this.selected ? Colors.SELECTED : Colors.WORK_QUBIT);
+        fill(this.disabled ? Colors.DISABLED : this.selected() ? Colors.SELECTION[this.selectGroup] : Colors.WORK_QUBIT);
         let [scaledX, scaledY] = scaleFunc(this.x, this.y);
         ellipse(scaledX, scaledY, sizeScale * diameterScale);
         fill(Colors.TEXT);
@@ -154,7 +176,7 @@ class Qubit {
     }
 
     reset() {
-        this.selected = false;
+        this.selectGroup = null;
         this.attribute = undefined;
     }
 
@@ -164,7 +186,7 @@ class Qubit {
             x: this.x,
             y: this.y,
             disabled: this.disabled,
-            selected: this.selected,
+            select_group: this.selectGroup,
             attribute: this.attribute
         };
     }
@@ -174,7 +196,7 @@ class Qubit {
         this.x = json.x;
         this.y = json.y;
         this.disabled = json.disabled;
-        this.selected = json.selected;
+        this.selectGroup = json.select_group;
         this.attribute = json.attribute;
     }
 }
@@ -184,13 +206,17 @@ class Coupler {
         this.qubitA = qubitA;
         this.qubitB = qubitB;
         this.disabled = false;
-        this.selected = false;
+        this.selectGroup = null;
         this.attribute = undefined;
+    }
+
+    selected() {
+        return this.selectGroup !== null;
     }
 
     draw() {
         strokeWeight(5);
-        stroke(this.disabled ? Colors.DISABLED : this.selected ? Colors.SELECTED : Colors.WORK_COUPLER);
+        stroke(this.disabled ? Colors.DISABLED : this.selected() ? Colors.SELECTION[this.selectGroup] : Colors.WORK_COUPLER);
         let [x1, y1] = scaleFunc(this.qubitA.x, this.qubitA.y);
         let [x2, y2] = scaleFunc(this.qubitB.x, this.qubitB.y);
         line(x1, y1, x2, y2);
@@ -200,6 +226,16 @@ class Coupler {
         let [x1, y1] = scaleFunc(this.qubitA.x, this.qubitA.y);
         let [x2, y2] = scaleFunc(this.qubitB.x, this.qubitB.y);
         return distToSegment(x, y, x1, y1, x2, y2) < 5;
+    }
+
+    handleSelect(doNotReset = false) {
+        if (this.disabled) return;
+        if (!doNotReset && this.selected()) {
+            this.selectGroup = null;
+        } else {
+            const selectGroup = document.getElementById("couplerGroupSelect").value;
+            this.selectGroup = parseInt(selectGroup);
+        }
     }
 
     isSelected(minX, minY, maxX, maxY) {
@@ -220,7 +256,7 @@ class Coupler {
     }
 
     reset() {
-        this.selected = false;
+        this.selectGroup = null;
         this.attribute = undefined;
     }
 
@@ -229,7 +265,7 @@ class Coupler {
             qubitA: this.qubitA.id,
             qubitB: this.qubitB.id,
             disabled: this.disabled,
-            selected: this.selected,
+            select_group: this.selectGroup,
             attribute: this.attribute
         };
     }
@@ -238,7 +274,7 @@ class Coupler {
         this.qubitA = qubits.find(q => q.id === json.qubitA);
         this.qubitB = qubits.find(q => q.id === json.qubitB);
         this.disabled = json.disabled;
-        this.selected = json.selected;
+        this.selectGroup = json.select_group;
         this.attribute = json.attribute;
     }
 }
@@ -276,11 +312,11 @@ class Chip {
     }
 
     numSelectedQubits() {
-        return this.qubits.filter((q) => q.selected).length;
+        return this.qubits.filter((q) => q.selected()).length;
     }
 
     numSelectedCouplers() {
-        return this.couplers.filter((c) => c.selected).length;
+        return this.couplers.filter((c) => c.selected()).length;
     }
 
     deleteQubit(qid) {
@@ -315,11 +351,25 @@ class Chip {
     }
 
     getSelectedQubitsPythonObject() {
-        let selectedQubits = this.qubits.filter((q) => q.selected);
+        let selectedQubits = this.qubits.filter((q) => q.selected());
         if (isListMode(storage.mode)) {
-            return '[' + selectedQubits
-                .map(qubit => `"${qubit.getName(this.qubitNameLength)}"`)
-                .join(', ') + ']';
+            let selectedGroups = [[], [], [], []];
+
+            this.qubits.forEach(qubit => {
+                if (qubit.selected()) {
+                    selectedGroups[qubit.selectGroup].push(qubit.getName(this.qubitNameLength));
+                }
+            });
+            // If there is no selected qubits, return empty list
+            if (selectedGroups.every(group => group.length === 0)) {
+                return '[]';
+            }
+            // If there is only one group, return the list of qubits
+            if (selectedGroups.filter(group => group.length > 0).length === 1) {
+                return `[${selectedGroups.flat().map(q => `"${q}"`).join(', ')}]`;
+            }
+            const selectedQubitsLists = selectedGroups.map(qubits => `[${qubits.map(q => `"${q}"`).join(', ')}]`);
+            return `[${selectedQubitsLists.join(', ')}]`;
         } else if (isAttrMode(storage.mode)) {
             return '{' + selectedQubits
                 .map(q => `"${q.getName(this.qubitNameLength)}": ${q.attribute}`)
@@ -328,11 +378,22 @@ class Chip {
     }
 
     getSelectedCouplersPythonObject() {
-        let selectedCouplers = this.couplers.filter((c) => c.selected);
+        let selectedCouplers = this.couplers.filter((c) => c.selected());
         if (isListMode(storage.mode)) {
-            return '[' + selectedCouplers
-                .map(coupler => `"${coupler.getName(this.qubitNameLength)}"`)
-                .join(', ') + ']';
+            let selectedGroups = [[], [], [], []];
+            this.couplers.forEach(coupler => {
+                if (coupler.selected()) {
+                    selectedGroups[coupler.selectGroup].push(coupler.getName(this.qubitNameLength));
+                }
+            });
+            if (selectedGroups.every(group => group.length === 0)) {
+                return '[]';
+            }
+            if (selectedGroups.filter(group => group.length > 0).length === 1) {
+                return `[${selectedGroups.flat().map(c => `"${c}"`).join(', ')}]`;
+            }
+            const selectedCouplersLists = selectedGroups.map(couplers => `[${couplers.map(c => `"${c}"`).join(', ')}]`);
+            return `[${selectedCouplersLists.join(', ')}]`;
         } else if (isAttrMode(storage.mode)) {
             return '{' + selectedCouplers
                 .map(c => `"${c.getName(this.qubitNameLength)}": ${c.attribute}`)
@@ -352,20 +413,20 @@ class Chip {
                 if (qubit.isHovered(x, y)) {
                     if (mode === Mode.TOPOLOGY) qubit.disabled = !qubit.disabled;
                     else if (mode === Mode.QUBIT) {
-                        qubit.selected = !qubit.selected;
+                        qubit.handleSelect()
                     } else if (mode === Mode.QATTR) {
                         let attribute = prompt("Enter attribute for the qubit:", qubit.attribute);
                         // If the user prompt with empty, attribute will be null
                         // and the selected state will be false
                         if (attribute === "") {
-                            qubit.selected = false;
+                            qubit.selectGroup = null;
                             qubit.attribute = undefined;
                         }
                         // If the user cancels the prompt, the state should be unchanged
                         else if (attribute === null) {
                             return;
                         } else {
-                            qubit.selected = true;
+                            qubit.selectGroup = 0;
                             qubit.attribute = attribute;
                         }
                     }
@@ -379,16 +440,16 @@ class Chip {
                 if (coupler.isHovered(x, y)) {
                     if (mode === Mode.TOPOLOGY) coupler.disabled = !coupler.disabled;
                     else if (mode === Mode.COUPLER) {
-                        coupler.selected = !coupler.selected;
+                        coupler.handleSelect();
                     } else if (mode === Mode.CATTR) {
                         let attribute = prompt("Enter attribute for the coupler:", coupler.attribute);
                         if (attribute === "") {
-                            coupler.selected = false;
+                            coupler.selectGroup = null;
                             coupler.attribute = undefined;
                         } else if (attribute === null) {
                             return;
                         } else {
-                            coupler.selected = true;
+                            coupler.selectGroup = 0;
                             coupler.attribute = attribute;
                         }
                     }
@@ -414,13 +475,13 @@ class Chip {
         if (storage.mode === Mode.QUBIT) {
             for (let qubit of this.qubits) {
                 if (qubit.isSelected(minX, minY, maxX, maxY)) {
-                    qubit.selected = true;
+                    qubit.handleSelect(true);
                 }
             }
         } else {
             for (let coupler of this.couplers) {
                 if (coupler.isSelected(minX, minY, maxX, maxY)) {
-                    coupler.selected = true;
+                    coupler.handleSelect(true);
                 }
             }
         }
@@ -589,26 +650,35 @@ function copySelectedCouplers() {
         .catch(err => console.error("Failed to copy selected couplers to clipboard:", err));
 }
 
+// TODO: FIXME
 function importSelections() {
     const input = prompt("Enter Python list/dict for qubit/coupler selection:");
     if (input !== null) {
         const processedInput = input.replace(/'/g, '"');
         try {
-            const parsedInput = JSON.parse(processedInput);
+            let parsedInput = JSON.parse(processedInput);
             if (Array.isArray(parsedInput)) {
                 // Detected as list mode
-                checkNamesAllInChip(parsedInput);
+                checkNamesAllInChip(parsedInput.flat());
                 let qubitUpdated = false;
-                for (let qubit of storage.chip.qubits) {
-                    if (parsedInput.includes(qubit.getName(storage.chip.qubitNameLength))) {
-                        qubit.selected = true;
-                        qubitUpdated = true;
-                    }
+                if (parsedInput.length === 0) {
+                    return;
                 }
-                for (let coupler of storage.chip.couplers) {
-                    if (parsedInput.includes(coupler.getName(storage.chip.qubitNameLength))) {
-                        coupler.selected = true;
-                    }
+                if (!Array.isArray(parsedInput[0])) {
+                    parsedInput = [parsedInput];
+                }
+                for (const [group, elements] of parsedInput.entries()) {
+                    storage.chip.qubits.forEach(qubit => {
+                        if (elements.includes(qubit.getName(storage.chip.qubitNameLength))) {
+                            qubit.selectGroup = group;
+                            qubitUpdated = true;
+                        }
+                    });
+                    storage.chip.couplers.forEach(coupler => {
+                        if (elements.includes(coupler.getName(storage.chip.qubitNameLength))) {
+                            coupler.selectGroup = group;
+                        }
+                    });
                 }
                 if (qubitUpdated) {
                     storage.setMode(Mode.QUBIT);
@@ -668,10 +738,12 @@ function setupModeListener(elementId, modeValue) {
         if (radioButton.checked) {
             let prevMode = storage.mode;
             storage.setMode(modeValue);
-            if ((isAttrMode(prevMode) && !isAttrMode(modeValue)) ||
+            if ((prevMode == Mode.TOPOLOGY) ||
+                (isAttrMode(prevMode) && !isAttrMode(modeValue)) ||
                 (!isAttrMode(prevMode) && isAttrMode(modeValue))) {
                 storage.chip.reset();
             }
+            setSelectGroupVisibility(modeValue);
             storage.saveToLocalStorage();
         }
     });
@@ -704,11 +776,11 @@ function loadPresetTopology(selectedTopology) {
 }
 
 // Mouse interaction functions
-function mouseClicked() { storage.chip.handleClick(mouseX, mouseY); }
+function mouseClickedImpl() { storage.chip.handleClick(mouseX, mouseY); }
 
-function doubleClicked() { storage.chip.handleDoubleClick(mouseX, mouseY); }
+function doubleClickedImpl() { storage.chip.handleDoubleClick(mouseX, mouseY); }
 
-function mousePressed() {
+function mousePressedImpl() {
     if (storage.mode === Mode.QUBIT || storage.mode === Mode.COUPLER) {
         dragStartX = mouseX;
         dragStartY = mouseY;
@@ -717,6 +789,7 @@ function mousePressed() {
 }
 
 function mouseDragged() {
+    console.log("dragging");
     if ((storage.mode === Mode.QUBIT || storage.mode === Mode.COUPLER) && dragging) {
         let minX = min(dragStartX, mouseX);
         let minY = min(dragStartY, mouseY);
@@ -773,7 +846,7 @@ function mouseHover() {
     }
 
     // Display attribute or change stroke weight based on hover target and mode
-    if (hoverTarget && hoverTarget.selected) {
+    if (hoverTarget && hoverTarget.selected()) {
         if (mode === Mode.QATTR || mode === Mode.CATTR) {
             // Display attribute
             displayAttribute(hoverTarget.getName(storage.chip.qubitNameLength), hoverTarget.attribute);
@@ -839,4 +912,11 @@ function checkNamesAllInChip(names) {
 function resetSelections() {
     storage.chip.reset();
     storage.saveToLocalStorage();
+}
+
+function setSelectGroupVisibility(mode) {
+    const qubitGroupSelect = document.getElementById("qubitGroupSelect");
+    const couplerGroupSelect = document.getElementById("couplerGroupSelect");
+    qubitGroupSelect.style.display = mode === Mode.QUBIT ? "block" : "none";
+    couplerGroupSelect.style.display = mode === Mode.COUPLER ? "block" : "none";
 }
