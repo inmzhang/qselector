@@ -82,3 +82,13 @@ five modes:
     Python. If you input something in the prompt and select `Ok`, the attribute will be saved and the coupler will
     be marked as selected. If you empty the input in the prompt and select `OK`, the coupler will be marked not selected. If you select `Cancel`, the coupler state will stay the same as before.
     - When click on the <u>Copy Selected Couplers</u> button on the top-right side, the selected couplers will be copied to the clipboard as a python dictionary, e.g. `{'G0901': 'attribute1', 'G2820': 'attribute2', ...}`
+
+
+## Todo List
+
+With priority from high to low:
+
+- [ ] Add selection groups with different colors
+- [ ] Add button to download the PNG/SVG of the canvas
+- [ ] Add color picker for selection groups
+- [ ] Add some simple keybindings for the tool
