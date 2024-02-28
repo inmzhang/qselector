@@ -18,11 +18,13 @@ const Colors = {
     TEXT: "rgb(255, 255, 255)"
 };
 const diameterScale = 2 / 3;
+const dutyRatio = 4 / 5;
 
 let storage;
 let scaleFunc, sizeScale;
 let dragStartX, dragStartY;
 let dragging = false;
+let showStats = false;
 let selectionBox = { x: 0, y: 0, width: 0, height: 0 };
 
 
@@ -37,7 +39,6 @@ function draw() {
     background(255);
     setupScaling();
     storage.chip?.draw();
-    storage.chip?.displayStats();
     draggingBox();
     mouseHover();
 }
@@ -404,6 +405,7 @@ class Chip {
     draw() {
         this.couplers.forEach(coupler => coupler.draw());
         this.qubits.forEach(qubit => qubit.draw());
+        if (showStats) this.displayStats();
     }
 
     handleClick(x, y) {
@@ -602,8 +604,8 @@ class Chip {
 function setupScaling() {
     const chipCenter = storage.chip.center();
     const canvasCenter = [width / 2, height / 2];
-    const widthRatio = (3 * width) / 4 / storage.chip.width / 2;
-    const heightRatio = (3 * height) / 4 / storage.chip.height;
+    const widthRatio = dutyRatio * width / storage.chip.width / 2;
+    const heightRatio = dutyRatio * height / storage.chip.height;
     const ratio = Math.min(widthRatio, heightRatio);
 
     scaleFunc = (x, y) => {
@@ -625,7 +627,9 @@ function createControlButtons(canvasDiv) {
     const canvasPosition = canvasDiv.getBoundingClientRect();
     createButtonAt("Copy Selected Qubits", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 10, copySelectedQubits);
     createButtonAt("Copy Selected Couplers", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 40, copySelectedCouplers);
-    createButtonAt("Import selections", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 70, importSelections);
+    createButtonAt("Copy PNG to Clipboard", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 70, downloadPNG);
+    createButtonAt("Import selections", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 100, importSelections);
+    createButtonAt("Toggle Statistics", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 130, () => showStats = !showStats);
 }
 
 function createButtonAt(label, x, y, callback) {
@@ -650,7 +654,6 @@ function copySelectedCouplers() {
         .catch(err => console.error("Failed to copy selected couplers to clipboard:", err));
 }
 
-// TODO: FIXME
 function importSelections() {
     const input = prompt("Enter Python list/dict for qubit/coupler selection:");
     if (input !== null) {
@@ -721,6 +724,10 @@ function importSelections() {
     return;
 }
 
+function downloadPNG() {
+    canvas.toBlob(blob => navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]))
+}
+
 // Listeners
 function setupListeners() {
     setupModeListener("modeSelectTopology", Mode.TOPOLOGY);
@@ -789,7 +796,6 @@ function mousePressedImpl() {
 }
 
 function mouseDragged() {
-    console.log("dragging");
     if ((storage.mode === Mode.QUBIT || storage.mode === Mode.COUPLER) && dragging) {
         let minX = min(dragStartX, mouseX);
         let minY = min(dragStartY, mouseY);
