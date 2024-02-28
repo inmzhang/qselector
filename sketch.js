@@ -34,6 +34,7 @@ function draw() {
     storage.chip?.draw();
     storage.chip?.displayStats();
     draggingBox();
+    mouseHover();
 }
 
 // Initialize the canvas and buttons
@@ -139,7 +140,7 @@ class Qubit {
         text(this.id, scaledX, scaledY);
     }
 
-    isClicked(x, y) {
+    isHovered(x, y) {
         return dist(x, y, scaleFunc(this.x, this.y)[0], scaleFunc(this.x, this.y)[1]) < sizeScale * diameterScale / 2;
     }
 
@@ -195,7 +196,7 @@ class Coupler {
         line(x1, y1, x2, y2);
     }
 
-    isClicked(x, y) {
+    isHovered(x, y) {
         let [x1, y1] = scaleFunc(this.qubitA.x, this.qubitA.y);
         let [x2, y2] = scaleFunc(this.qubitB.x, this.qubitB.y);
         return distToSegment(x, y, x1, y1, x2, y2) < 5;
@@ -348,7 +349,7 @@ class Chip {
         let mode = storage.mode;
         if (mode === Mode.TOPOLOGY || mode === Mode.QUBIT || mode === Mode.QATTR) {
             for (let qubit of this.qubits) {
-                if (qubit.isClicked(x, y)) {
+                if (qubit.isHovered(x, y)) {
                     if (mode === Mode.TOPOLOGY) qubit.disabled = !qubit.disabled;
                     else if (mode === Mode.QUBIT) {
                         qubit.selected = !qubit.selected;
@@ -375,7 +376,7 @@ class Chip {
         }
         if (mode === Mode.TOPOLOGY || mode === Mode.COUPLER || mode === Mode.CATTR) {
             for (let coupler of this.couplers) {
-                if (coupler.isClicked(x, y)) {
+                if (coupler.isHovered(x, y)) {
                     if (mode === Mode.TOPOLOGY) coupler.disabled = !coupler.disabled;
                     else if (mode === Mode.COUPLER) {
                         coupler.selected = !coupler.selected;
@@ -401,7 +402,7 @@ class Chip {
     handleDoubleClick(x, y) {
         if (storage.mode === Mode.TOPOLOGY) {
             for (let qubit of this.qubits) {
-                if (qubit.isClicked(x, y)) {
+                if (qubit.isHovered(x, y)) {
                     this.deleteQubit(qubit.id);
                     return;
                 }
@@ -747,6 +748,56 @@ function draggingBox() {
     }
 
     selectionBox = { x: 0, y: 0, width: 0, height: 0 };
+}
+
+function mouseHover() {
+    let mode = storage.mode;
+    let hoverTarget = null;
+
+    if (mode === Mode.TOPOLOGY || mode === Mode.QUBIT || mode === Mode.QATTR) {
+        for (let qubit of storage.chip.qubits) {
+            if (qubit.isHovered(mouseX, mouseY)) {
+                hoverTarget = qubit;
+                break;
+            }
+        }
+    }
+
+    if (!hoverTarget && (mode === Mode.TOPOLOGY || mode === Mode.COUPLER || mode === Mode.CATTR)) {
+        for (let coupler of storage.chip.couplers) {
+            if (coupler.isHovered(mouseX, mouseY)) {
+                hoverTarget = coupler;
+                break;
+            }
+        }
+    }
+
+    // Display attribute or change stroke weight based on hover target and mode
+    if (hoverTarget && hoverTarget.selected) {
+        if (mode === Mode.QATTR || mode === Mode.CATTR) {
+            // Display attribute
+            displayAttribute(hoverTarget.getName(storage.chip.qubitNameLength), hoverTarget.attribute);
+        } else {
+            // Change stroke weight or any other hover behavior
+            // hoverTarget.highlight();
+            return
+        }
+    }
+}
+
+// Define a function to display attribute text
+function displayAttribute(name, attribute) {
+    const padding = 5;
+    const ts = 14;
+
+    let [x, y] = [mouseX + 10, mouseY - 30];
+
+    fill(Colors.SELECTED);
+    stroke(Colors.TEXT);
+    strokeWeight(2);
+    textSize(ts);
+    textAlign(LEFT, TOP);
+    text(name + ": " + attribute, x + padding, y + padding);
 }
 
 // Utility functions
