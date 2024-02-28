@@ -591,8 +591,9 @@ function copySelectedCouplers() {
 function importSelections() {
     const input = prompt("Enter Python list/dict for qubit/coupler selection:");
     if (input !== null) {
+        const processedInput = input.replace(/'/g, '"');
         try {
-            const parsedInput = JSON.parse(input);
+            const parsedInput = JSON.parse(processedInput);
             if (Array.isArray(parsedInput)) {
                 // Detected as list mode
                 checkNamesAllInChip(parsedInput);
