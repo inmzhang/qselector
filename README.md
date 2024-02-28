@@ -88,7 +88,6 @@ five modes:
 
 With priority from high to low:
 
-- [ ] Add selection groups with different colors
-- [ ] Add button to download the PNG/SVG of the canvas
-- [ ] Add color picker for selection groups
+- [x] Add selection groups with different colors
+- [x] Add button to copy the canvas PNG to clipboard(Not work on Firefox)
 - [ ] Add some simple keybindings for the tool
