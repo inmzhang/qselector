@@ -4,20 +4,23 @@ This simple tool is designed to alleviate the pain of manually typing qubit/coup
 
 Through a visual interface, users can quickly select desired qubits/couplers and easily copy their list or dictionary with attribute values to the clipboard. This copied content can then be pasted directly into the experimental script.
 
-## Start the application
 
-To start the application, simply pull up a server in the terminal:
+## Overview
+
+![tool overview](images/overview.png)
+
+## Getting Started
+
+You can use the online version of the tool [QSelector](https://inmzhang.github.io/qselector/).
+
+Or, to start locally, simply pull up a server in the terminal(or just open the `index.html` file in your browser directly, but some features may not work properly due to the security policy of the browser):
 
 ```shell
 cd qselector
 python -m http.server
 ```
 
-## Overview
-
-![tool overview](images/overview.png)
-
-## Usage
+## Reference
 
 There are two main regions in the tool: the settings sidebar and the canvas visualizing the quantum chip.
 In the canvas, qubits are represented as circles and couplers as lines connecting them. The qubits are labeled with their ids.
