@@ -902,6 +902,12 @@ function keyPressed() {
         navigator.clipboard.readText().then(text => importSelections(text));
     }
 
+    // Reset selections
+    if (keyCode === 32) {
+        resetSelections();
+        return;
+    }
+
     // Select groups
     if (isListMode(mode)) {
         const groupKeyCode = [49, 50, 51, 52];

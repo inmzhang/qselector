@@ -100,6 +100,7 @@ five modes:
     - `1/2/3/4` in the top row number: Change the group of the selected qubits/couplers to the corresponding group.
     - `ctrl + c`: Copy the selected qubits/couplers to the clipboard.
     - `ctrl + v`: Import the selections from the clipboard(not work on Firefox).
+    - `SPACE`: Reset all the selections.
     
 ## Todo List
 
