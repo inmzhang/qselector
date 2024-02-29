@@ -528,45 +528,29 @@ class Chip {
     displayStats() {
         const margin = 10;
         const statsTextSize = 14;
-        const statsBoxWidth = 160;
-        const statsBoxHeight = 100;
-        const statsBoxX = margin;
-        const statsBoxY = margin;
-        const statsBoxColor = "rgba(255, 255, 255, 0.7)";
-
-        const numActiveQubits = this.numActiveQubits();
-        const numActiveCouplers = this.numActiveCouplers();
-
-        // Draw the stats box
-        fill(statsBoxColor);
-        stroke(0);
-        rect(statsBoxX, statsBoxY, statsBoxWidth, statsBoxHeight, 10);
 
         // Display the number of work qubits and work couplers
+        fill(Colors.TEXT);
         fill(0);
         textSize(statsTextSize);
         strokeWeight(1);
         textAlign(LEFT, TOP);
-        text(
-            `Active Qubits: ${numActiveQubits}`,
-            statsBoxX + margin,
-            statsBoxY + margin
-        );
-        text(
-            `Active Couplers: ${numActiveCouplers}`,
-            statsBoxX + margin,
-            statsBoxY + margin * 2 + statsTextSize
-        );
-        text(
-            `Selected Qubits: ${this.numSelectedQubits()}`,
-            statsBoxX + margin,
-            statsBoxY + margin * 3 + statsTextSize * 2
-        );
-        text(
-            `Selected Couplers: ${this.numSelectedCouplers()}`,
-            statsBoxX + margin,
-            statsBoxY + margin * 4 + statsTextSize * 3
-        );
+
+        const messages = [
+            ["Active Qubits: " + this.numActiveQubits()],
+            ["Active Couplers: " + this.numActiveCouplers()],
+            ["Disabled Qubits: " + (this.numQubits() - this.numActiveQubits())],
+            ["Disabled Couplers: " + (this.numCouplers() - this.numActiveCouplers())],
+            ["Selected Qubits: " + this.numSelectedQubits()],
+            ["Selected Couplers: " + this.numSelectedCouplers()],
+        ];
+        for (const [i, message] of messages.entries()) {
+            text(
+                message,
+                2 * margin,
+                margin * (i + 2) + statsTextSize * (i + 1)
+            );
+        }
     }
 
     toJSON() {
