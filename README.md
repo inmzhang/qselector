@@ -60,14 +60,20 @@ five modes:
     - <u>Drag and select</u> a region to select multiple qubits at once.
     - When click on the <u>Copy Selected Qubits</u> button on the top-right side, the selected qubits will be 
     copied to the clipboard as a python list, e.g. `['Q001', 'Q002', ...]`
+    - You can also select different groups the qubits belong to(at most four groups). When there are more than one 
+    groups of qubits selected, the copied content will be a list of lists, e.g. `[['Q001', 'Q002', ...], ['Q003', 'Q004', ...], ...]`,
+    whose length is always equal to 4.
 
 3. **Select Couplers:**
     - <u>Single Click</u> on the couplers to mark it as selected. The selected couplers will be highlighted in red.
     - <u>Drag and select</u> a region to select multiple couplers at once.
     - When click on the <u>Copy Selected Couplers</u> button on the top-right side, the selected couplers will be
     copied to the clipboard as a python list, e.g. `['G0901', 'G2820', ...]`
+    - You can also select different groups the couplers belong to(at most four groups). When there are more than one
+    groups of couplers selected, the copied content will be a list of lists, e.g. `[['G0901', 'G2820', ...], ['G0902', 'G2821', ...], ...]`,
+    whose length is always equal to 4.
 
-4. **Select Qubits Attributes:** 
+1. **Select Qubits Attributes:** 
     - <u>Single Click</u> on the qubits to pop up a prompt to set the qubit's attributes. The input you typed
     in will be treated as a raw javascript string, which will finally be converted to a python primitive type.
     For example, `0` will finally be converted to integer `0` while `"0"` will be converted to string `"0"` in
@@ -75,7 +81,7 @@ five modes:
     be marked as selected. If you empty the input in the prompt and select `OK`, the qubit will be marked not selected. If you select `Cancel`, the qubit state will stay the same as before.
     - When click on the <u>Copy Selected Qubits</u> button on the top-right side, the selected qubits will be copied to the clipboard as a python dictionary, e.g. `{'Q001': 'attribute1', 'Q002': 'attribute2', ...}`
 
-5. **Select Couplers Attributes:**
+2. **Select Couplers Attributes:**
     - <u>Single Click</u> on the couplers to pop up a prompt to set the coupler's attributes. The input you typed
     in will be treated as a raw javascript string, which will finally be converted to a python primitive type.
     For example, `0` will finally be converted to integer `0` while `"0"` will be converted to string `"0"` in
@@ -83,11 +89,20 @@ five modes:
     be marked as selected. If you empty the input in the prompt and select `OK`, the coupler will be marked not selected. If you select `Cancel`, the coupler state will stay the same as before.
     - When click on the <u>Copy Selected Couplers</u> button on the top-right side, the selected couplers will be copied to the clipboard as a python dictionary, e.g. `{'G0901': 'attribute1', 'G2820': 'attribute2', ...}`
 
+### Other Features
 
+1. **Copy Canvas PNG to Clipboard:** Click on the button to copy the canvas PNG to the clipboard. You can paste the PNG to any place you want, e.g. a word document. Note that this feature not work on Firefox, but it has been tested on Chrome and Edge.
+2. **Import selections:** You can import the selections by copying the python list/lists/dict to the clipboard and click on the `Import Selections` button. The selections will be imported to the canvas and the corresponding qubits/couplers will be marked as selected.
+3. **Toggle Statistics:** Click on the button to toggle the statistics of the chip.
+4. **Keybindings:** There are some simple keybindings for the tool:
+    - `q`: Change the mode to the previous one in the mode list.
+    - `e`: Change the mode to the next one in the mode list.
+    - `1/2/3/4` in the top row number: Change the group of the selected qubits/couplers to the corresponding group.
+    
 ## Todo List
 
 With priority from high to low:
 
 - [x] Add selection groups with different colors
 - [x] Add button to copy the canvas PNG to clipboard(Not work on Firefox)
-- [ ] Add some simple keybindings for the tool
+- [x] Add some simple keybindings for the tool
