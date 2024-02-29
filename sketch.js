@@ -884,19 +884,33 @@ function displayAttribute(name, attribute) {
 function keyPressed() {
     let mode = storage.mode;
     // avoid keyboard interaction when inputting attribute
-    if (document.activeElement.tagName === "INPUT" || !isListMode(mode)) {
+    if (document.activeElement.tagName === "INPUT") {
         return;
     }
 
-    const groupKeyCode = [49, 50, 51, 52];
-    const group = mode === Mode.QUBIT ? "qubitGroupSelect" : "couplerGroupSelect";
-    const selectedGroup = document.getElementById(group);
-    for (const [index, code] of groupKeyCode.entries()) {
-        if (keyCode === code) {
-            selectedGroup.value = index;
-            break;
+    // Select next/prev mode
+    const modeKeys = ["modeSelectTopology", "modeSelectQubit", "modeSelectCoupler", "modeSelectQubitAttr", "modeSelectCouplerAttr"];
+    if (keyCode === 69) {
+        let nextMode = modeKeys[(modeKeys.indexOf("modeSelect" + mode) + 1) % modeKeys.length];
+        document.getElementById(nextMode).click();
+    } else if (keyCode === 81) {
+        let prevMode = modeKeys[(modeKeys.indexOf("modeSelect" + mode) + modeKeys.length - 1) % modeKeys.length];
+        document.getElementById(prevMode).click();
+    }
+
+    // Select groups
+    if (isListMode(mode)) {
+        const groupKeyCode = [49, 50, 51, 52];
+        const group = mode === Mode.QUBIT ? "qubitGroupSelect" : "couplerGroupSelect";
+        const selectedGroup = document.getElementById(group);
+        for (const [index, code] of groupKeyCode.entries()) {
+            if (keyCode === code) {
+                selectedGroup.value = index;
+                break;
+            }
         }
     }
+
     storage.saveToLocalStorage();
 }
 
