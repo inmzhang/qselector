@@ -893,9 +893,12 @@ function keyPressed() {
     if (keyCode === 69) {
         let nextMode = modeKeys[(modeKeys.indexOf("modeSelect" + mode) + 1) % modeKeys.length];
         document.getElementById(nextMode).click();
-    } else if (keyCode === 81) {
+        return;
+    }
+    if (keyCode === 81) {
         let prevMode = modeKeys[(modeKeys.indexOf("modeSelect" + mode) + modeKeys.length - 1) % modeKeys.length];
         document.getElementById(prevMode).click();
+        return;
     }
 
     // Select groups
@@ -910,7 +913,6 @@ function keyPressed() {
             }
         }
     }
-
     storage.saveToLocalStorage();
 }
 
