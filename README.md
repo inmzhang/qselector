@@ -98,6 +98,8 @@ five modes:
     - `q`: Change the mode to the previous one in the mode list.
     - `e`: Change the mode to the next one in the mode list.
     - `1/2/3/4` in the top row number: Change the group of the selected qubits/couplers to the corresponding group.
+    - `ctrl + c`: Copy the selected qubits/couplers to the clipboard.
+    - `ctrl + v`: Import the selections from the clipboard(not work on Firefox).
     
 ## Todo List
 

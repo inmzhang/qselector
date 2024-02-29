@@ -638,8 +638,10 @@ function copySelectedCouplers() {
         .catch(err => console.error("Failed to copy selected couplers to clipboard:", err));
 }
 
-function importSelections() {
-    const input = prompt("Enter Python list/dict for qubit/coupler selection:");
+function importSelections(input = null) {
+    if (input === null) {
+        input = prompt("Enter Python list/dict for qubit/coupler selection:");
+    }
     if (input !== null) {
         const processedInput = input.replace(/'/g, '"');
         try {
@@ -883,6 +885,21 @@ function keyPressed() {
         let prevMode = modeKeys[(modeKeys.indexOf("modeSelect" + mode) + modeKeys.length - 1) % modeKeys.length];
         document.getElementById(prevMode).click();
         return;
+    }
+
+    // Copy selected qubits/couplers
+    if (keyCode === 67 && keyIsDown(CONTROL)) {
+        if (mode === Mode.QUBIT || mode === Mode.QATTR) {
+            copySelectedQubits();
+        } else if (mode === Mode.COUPLER || mode === Mode.CATTR) {
+            copySelectedCouplers();
+        }
+        return;
+    }
+
+    // Import selections from clipboard
+    if (keyCode === 86 && keyIsDown(CONTROL)) {
+        navigator.clipboard.readText().then(text => importSelections(text));
     }
 
     // Select groups
