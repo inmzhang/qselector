@@ -864,6 +864,7 @@ function mouseHover() {
     }
 }
 
+
 // Define a function to display attribute text
 function displayAttribute(name, attribute) {
     const padding = 5;
@@ -877,6 +878,26 @@ function displayAttribute(name, attribute) {
     textSize(ts);
     textAlign(LEFT, TOP);
     text(name + ": " + attribute, x + padding, y + padding);
+}
+
+// Keyboard interaction
+function keyPressed() {
+    let mode = storage.mode;
+    // avoid keyboard interaction when inputting attribute
+    if (document.activeElement.tagName === "INPUT" || !isListMode(mode)) {
+        return;
+    }
+
+    const groupKeyCode = [49, 50, 51, 52];
+    const group = mode === Mode.QUBIT ? "qubitGroupSelect" : "couplerGroupSelect";
+    const selectedGroup = document.getElementById(group);
+    for (const [index, code] of groupKeyCode.entries()) {
+        if (keyCode === code) {
+            selectedGroup.value = index;
+            break;
+        }
+    }
+    storage.saveToLocalStorage();
 }
 
 // Utility functions
