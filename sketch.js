@@ -614,19 +614,19 @@ function createControlButtons(canvasDiv) {
         ["Copy Couplers", copySelectedCouplers],
         ["Toggle Statistics", () => showStats = !showStats],
         ["Import selections", importSelections],
-        ["Copy Canvas PNG", downloadPNG],
+        ["Copy PNG", downloadPNG],
     ];
-    const maxWidth = buttons.map(b => textWidth(b[0])).reduce((a, b) => Math.max(a, b));
-    const startWidth = canvasPosition.left + canvasDiv.offsetWidth - maxWidth - 20;
+    const startWidth = canvasPosition.left + width - 125;
     const startHeight = canvasPosition.top + 10;
     for (const [idx, button] of buttons.entries()) {
-        createButtonAt(button[0], startWidth, startHeight + 30 * idx, button[1]);
+        createButtonAt(button[0], startWidth, startHeight + 30 * idx, 120, 25, button[1]);
     }
 }
 
-function createButtonAt(label, x, y, callback) {
+function createButtonAt(label, x, y, w, h, callback) {
     const button = createButton(label);
     button.position(x, y);
+    button.size(w, h);
     button.mousePressed(callback);
 }
 
