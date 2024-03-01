@@ -609,11 +609,19 @@ function setupScaling() {
 // Create control buttons and position them
 function createControlButtons(canvasDiv) {
     const canvasPosition = canvasDiv.getBoundingClientRect();
-    createButtonAt("Copy Selected Qubits", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 10, copySelectedQubits);
-    createButtonAt("Copy Selected Couplers", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 40, copySelectedCouplers);
-    createButtonAt("Copy PNG to Clipboard", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 70, downloadPNG);
-    createButtonAt("Import selections", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 100, () => importSelections());
-    createButtonAt("Toggle Statistics", canvasPosition.left + canvasDiv.offsetWidth - 160, canvasPosition.top + 130, () => showStats = !showStats);
+    const buttons = [
+        ["Copy Qubits", copySelectedQubits],
+        ["Copy Couplers", copySelectedCouplers],
+        ["Toggle Statistics", () => showStats = !showStats],
+        ["Import selections", importSelections],
+        ["Copy Canvas PNG", downloadPNG],
+    ];
+    const maxWidth = buttons.map(b => textWidth(b[0])).reduce((a, b) => Math.max(a, b));
+    const startWidth = canvasPosition.left + canvasDiv.offsetWidth - maxWidth - 20;
+    const startHeight = canvasPosition.top + 10;
+    for (const [idx, button] of buttons.entries()) {
+        createButtonAt(button[0], startWidth, startHeight + 30 * idx, button[1]);
+    }
 }
 
 function createButtonAt(label, x, y, callback) {
