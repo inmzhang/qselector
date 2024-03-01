@@ -850,10 +850,6 @@ function mouseHover() {
         if (mode === Mode.QATTR || mode === Mode.CATTR) {
             // Display attribute
             displayAttribute(hoverTarget.getName(storage.chip.qubitNameLength), hoverTarget.attribute);
-        } else {
-            // Change stroke weight or any other hover behavior
-            // hoverTarget.highlight();
-            return
         }
     }
 }
@@ -866,7 +862,7 @@ function displayAttribute(name, attribute) {
 
     let [x, y] = [mouseX + 10, mouseY - 30];
 
-    fill(Colors.SELECTED);
+    fill(Colors.SELECTION[0])
     stroke(Colors.TEXT);
     strokeWeight(2);
     textSize(ts);
