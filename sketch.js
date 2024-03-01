@@ -371,7 +371,9 @@ class Chip {
             if (selectedGroups.filter(group => group.length > 0).length === 1) {
                 return `[${selectedGroups.flat().map(q => `"${q}"`).join(', ')}]`;
             }
-            const selectedQubitsLists = selectedGroups.map(qubits => `[${qubits.map(q => `"${q}"`).join(', ')}]`);
+            const selectedQubitsLists = selectedGroups
+                .filter(qubits => qubits.length > 0)
+                .map(qubits => `[${qubits.map(q => `"${q}"`).join(', ')}]`);
             return `[${selectedQubitsLists.join(', ')}]`;
         } else if (isAttrMode(storage.mode)) {
             return '{' + selectedQubits
@@ -395,7 +397,9 @@ class Chip {
             if (selectedGroups.filter(group => group.length > 0).length === 1) {
                 return `[${selectedGroups.flat().map(c => `"${c}"`).join(', ')}]`;
             }
-            const selectedCouplersLists = selectedGroups.map(couplers => `[${couplers.map(c => `"${c}"`).join(', ')}]`);
+            const selectedCouplersLists = selectedGroups
+                .filter(couplers => couplers.length > 0)
+                .map(couplers => `[${couplers.map(c => `"${c}"`).join(', ')}]`);
             return `[${selectedCouplersLists.join(', ')}]`;
         } else if (isAttrMode(storage.mode)) {
             return '{' + selectedCouplers
