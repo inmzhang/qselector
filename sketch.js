@@ -403,6 +403,7 @@ class Chip {
     }
 
     draw() {
+        textFont('Verdana')
         this.couplers.forEach(coupler => coupler.draw());
         this.qubits.forEach(qubit => qubit.draw());
         if (showStats) this.displayStats();
@@ -530,8 +531,8 @@ class Chip {
         const statsTextSize = 14;
 
         // Display the number of work qubits and work couplers
-        fill(Colors.TEXT);
-        fill(0);
+        fill(1);
+        textFont('Courier New');
         textSize(statsTextSize);
         strokeWeight(1);
         textAlign(LEFT, TOP);
