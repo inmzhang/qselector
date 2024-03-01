@@ -24,7 +24,8 @@ let storage;
 let scaleFunc, sizeScale;
 let dragStartX, dragStartY;
 let dragging = false;
-let showStats = false;
+let showStats = true;
+let showKeybinds = true;
 let selectionBox = { x: 0, y: 0, width: 0, height: 0 };
 
 
@@ -39,6 +40,7 @@ function draw() {
     background(255);
     setupScaling();
     storage.chip?.draw();
+    if (showKeybinds) displayKeybinds();
     draggingBox();
     mouseHover();
 }
@@ -534,7 +536,7 @@ class Chip {
         fill(1);
         textFont('Courier New');
         textSize(statsTextSize);
-        strokeWeight(1);
+        strokeWeight(1.4);
         textAlign(LEFT, TOP);
 
         const messages = [
@@ -614,6 +616,7 @@ function createControlButtons(canvasDiv) {
         ["Copy Qubits", copySelectedQubits],
         ["Copy Couplers", copySelectedCouplers],
         ["Toggle Statistics", () => showStats = !showStats],
+        ["Toggle Keybinds", () => showKeybinds = !showKeybinds],
         ["Import selections", importSelections],
         ["Copy PNG", downloadPNG],
     ];
@@ -725,6 +728,32 @@ function importSelections(input = null) {
 
 function downloadPNG() {
     canvas.toBlob(blob => navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]))
+}
+
+function displayKeybinds() {
+    const margin = 10;
+    const statsTextSize = 12;
+
+    // Display the number of work qubits and work couplers
+    fill(1);
+    textFont('Courier New');
+    textSize(statsTextSize);
+    strokeWeight(1.1);
+    textAlign(LEFT, TOP);
+
+    const keyBinds = [
+        "SPACE: Reset selections",
+        "CTRL + C/V: Copy/paste selections",
+        "1/2/3/4: Select groups",
+        `Q/E: Select previous/next mode`,
+    ];
+    for (const [i, bind] of keyBinds.entries()) {
+        text(
+            bind,
+            2 * margin,
+            height - margin - 20 * (i + 1)
+        );
+    }
 }
 
 // Listeners
