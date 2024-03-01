@@ -661,19 +661,23 @@ function importSelections(input = null) {
                 if (parsedInput.length === 0) {
                     return;
                 }
+                let useDefaultGroup = false;
                 if (!Array.isArray(parsedInput[0])) {
+                    useDefaultGroup = true;
                     parsedInput = [parsedInput];
                 }
-                for (const [group, elements] of parsedInput.entries()) {
+                const qubitsDefaultGroup = document.getElementById("qubitGroupSelect").value;
+                const couplersDefaultGroup = document.getElementById("couplerGroupSelect").value;
+                for (let [group, elements] of parsedInput.entries()) {
                     storage.chip.qubits.forEach(qubit => {
                         if (elements.includes(qubit.getName(storage.chip.qubitNameLength))) {
-                            qubit.selectGroup = group;
+                            qubit.selectGroup = useDefaultGroup ? qubitsDefaultGroup : group;
                             qubitUpdated = true;
                         }
                     });
                     storage.chip.couplers.forEach(coupler => {
                         if (elements.includes(coupler.getName(storage.chip.qubitNameLength))) {
-                            coupler.selectGroup = group;
+                            coupler.selectGroup = useDefaultGroup ? couplersDefaultGroup : group;
                         }
                     });
                 }
