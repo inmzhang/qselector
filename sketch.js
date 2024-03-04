@@ -701,14 +701,14 @@ function importSelections(input = null) {
                 let qubitUpdated = false;
                 for (let qubit of storage.chip.qubits) {
                     if (names.includes(qubit.getName(storage.chip.qubitNameLength))) {
-                        qubit.selected = true;
+                        qubit.selectGroup = 0;
                         qubit.attribute = parsedInput[qubit.getName(storage.chip.qubitNameLength)];
                         qubitUpdated = true;
                     }
                 }
                 for (let coupler of storage.chip.couplers) {
                     if (names.includes(coupler.getName(storage.chip.qubitNameLength))) {
-                        coupler.selected = true;
+                        coupler.selectGroup = 0;
                         coupler.attribute = parsedInput[coupler.getName(storage.chip.qubitNameLength)];
                     }
                 }
