@@ -13,6 +13,8 @@ const Colors = {
         "rgb(251, 188, 5)",
         "rgb(52, 168, 83)",
         "rgb(170, 45, 237)",
+        "rgb(255, 138, 5)",
+        "rgb(117, 64, 28)",
     ],
     WORK_COUPLER: "rgb(0, 0, 0)",
     TEXT: "rgb(255, 255, 255)"
@@ -218,7 +220,7 @@ class Coupler {
     }
 
     draw() {
-        strokeWeight(5);
+        strokeWeight(6);
         stroke(this.disabled ? Colors.DISABLED : this.selected() ? Colors.SELECTION[this.selectGroup] : Colors.WORK_COUPLER);
         let [x1, y1] = scaleFunc(this.qubitA.x, this.qubitA.y);
         let [x2, y2] = scaleFunc(this.qubitB.x, this.qubitB.y);
@@ -356,7 +358,7 @@ class Chip {
     getSelectedQubitsPythonObject() {
         let selectedQubits = this.qubits.filter((q) => q.selected());
         if (isListMode(storage.mode)) {
-            let selectedGroups = [[], [], [], []];
+            let selectedGroups = [[], [], [], [], [], []];
 
             this.qubits.forEach(qubit => {
                 if (qubit.selected()) {
@@ -385,7 +387,7 @@ class Chip {
     getSelectedCouplersPythonObject() {
         let selectedCouplers = this.couplers.filter((c) => c.selected());
         if (isListMode(storage.mode)) {
-            let selectedGroups = [[], [], [], []];
+            let selectedGroups = [[], [], [], [], [], []];
             this.couplers.forEach(coupler => {
                 if (coupler.selected()) {
                     selectedGroups[coupler.selectGroup].push(coupler.getName(this.qubitNameLength));
@@ -748,7 +750,7 @@ function displayKeybinds() {
     const keyBinds = [
         "SPACE: Reset selections",
         "CTRL + C/V: Copy/paste selections",
-        "1/2/3/4: Select groups",
+        "1/2/3/4/5/6: Select groups",
         `Q/E: Select previous/next mode`,
     ];
     for (const [i, bind] of keyBinds.entries()) {
@@ -952,7 +954,7 @@ function keyPressed() {
 
     // Select groups
     if (isListMode(mode)) {
-        const groupKeyCode = [49, 50, 51, 52];
+        const groupKeyCode = [49, 50, 51, 52, 53, 54];
         const group = mode === Mode.QUBIT ? "qubitGroupSelect" : "couplerGroupSelect";
         const selectedGroup = document.getElementById(group);
         for (const [index, code] of groupKeyCode.entries()) {
